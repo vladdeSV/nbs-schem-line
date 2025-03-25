@@ -1,0 +1,14 @@
+{
+  "name": "nbs-converter",
+  "module": "parse-nbs.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "nbtify": "^2.2.0"
+  }
+}
