@@ -257,7 +257,7 @@ export function parseNBSFile(filepath: string): number[] {
   console.log('notes:')
   console.log(output)
 
-  const trimmedNoteValues = notes.map(x => (x ? x.value - 33 - (lowestValue - 33) + 1 : 0))
+  const trimmedNoteValues = notes.map(x => (x ? x.value - 33 : 0))
 
   console.log('trimmedNoteValues:', trimmedNoteValues)
 
