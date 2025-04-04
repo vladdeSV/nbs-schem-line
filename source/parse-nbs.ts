@@ -112,7 +112,7 @@ export function parseNBSFile(filepath: string): number[] {
   const loopStartTick = short()
   console.log('Loop start tick:', loopStartTick)
 
-  console.info('--- Second section')
+  console.log('--- Second section')
 
   // section 2
   let currentTick = -1
@@ -171,7 +171,7 @@ export function parseNBSFile(filepath: string): number[] {
     console.log('Jump ticks:', jumpTicks)
 
     if (jumpTicks === 0) {
-      console.info('end of section')
+      console.log('end of section')
       break
     }
     currentTick += jumpTicks
@@ -181,7 +181,7 @@ export function parseNBSFile(filepath: string): number[] {
     while (true) {
       const layerJumps = short()
       if (layerJumps === 0) {
-        console.info('end of layer')
+        console.log('end of layer')
         break
       }
       layer += layerJumps
@@ -231,8 +231,15 @@ export function parseNBSFile(filepath: string): number[] {
   console.log('Lowest value:', lowestValue - 33)
   console.log('Highest value:', highestValue - 33)
   console.log('Range:', highestValue - lowestValue + 1)
+  const uniqueNotes = [...new Set(notes.map(n => n?.value ?? 0).filter(n => n > 0))]
+  console.log('Unique notes:', uniqueNotes.length)
 
-  console.info('--- ignoring other sections')
+  if (uniqueNotes.length > 15) {
+    console.error('Too many unique notes:', uniqueNotes.length)
+    throw 'too many unique notes'
+  }
+
+  console.log('--- ignoring other sections')
   console.log()
 
   let output: string = '| '
