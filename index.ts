@@ -7,6 +7,9 @@ if (!process.argv.includes('-v')) {
   console.log = () => {}
 }
 
+// filter out flags
+process.argv = process.argv.filter(arg => !arg.startsWith('-'))
+
 const filepath = process.argv[2]
 if (filepath === undefined) {
   console.error('usage: node index.ts <file.nbs> [output.schem]')
