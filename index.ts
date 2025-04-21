@@ -1,6 +1,7 @@
 import { writeFileSync } from 'fs'
-import { parseNoteValues } from './source/modify-schem.ts'
+import { schem2HardCodedInstrument } from './source/modify-schem.ts'
 import { parseNBSFile } from './source/parse-nbs.ts'
+import { bar } from './source/process-binary-stream.ts'
 
 // check if -v flag is passed, if not, set console.log to noop
 if (!process.argv.includes('-v')) {
@@ -24,7 +25,8 @@ if (output === undefined) {
 }
 
 const noteSignals = parseNBSFile(filepath)
-const data: Uint8Array<ArrayBufferLike> = await parseNoteValues(noteSignals)
+const data: Uint8Array<ArrayBufferLike> = await schem2HardCodedInstrument(bar(noteSignals))
+// const data: Uint8Array<ArrayBufferLike> = await parseNoteValues(noteSignals)
 
 writeFileSync(output, data)
 

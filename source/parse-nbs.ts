@@ -1,6 +1,11 @@
 import { readFileSync } from 'fs'
 
-export function parseNBSFile(filepath: string): number[] {
+export function parseNBSFile(filepath: string): Record<string, boolean[]> {
+  interface Note {
+    value: number
+    instrument: number
+  }
+
   const nodeBuffer = readFileSync(filepath)
   const arrayBuffer = nodeBuffer.buffer.slice(nodeBuffer.byteOffset, nodeBuffer.byteOffset + nodeBuffer.byteLength)
   const view = new DataView(arrayBuffer)
@@ -117,12 +122,10 @@ export function parseNBSFile(filepath: string): number[] {
   // section 2
   let currentTick = -1
 
-  interface Note {
-    value: number
+  const notes: Array<(Note | undefined)[]> = new Array(layerCount)
+  for (let i = 0; i < layerCount; ++i) {
+    notes[i] = Array(songTickLength)
   }
-
-  const notes: (Note | undefined)[] = Array(songTickLength).fill(undefined)
-
   function noteNameFromRawNoteBlockValue(value: number) {
     const v = value - 33
 
@@ -165,34 +168,28 @@ export function parseNBSFile(filepath: string): number[] {
   let highestValue = undefined
 
   while (true) {
-    console.log('----------> loop')
+    // console.log('----------> loop')
 
     const jumpTicks = short()
-    console.log('Jump ticks:', jumpTicks)
+    // console.log('Jump ticks:', jumpTicks)
 
     if (jumpTicks === 0) {
       console.log('end of section')
       break
     }
     currentTick += jumpTicks
-    console.log('(Current tick):', currentTick)
+    // console.log('(Current tick):', currentTick)
 
     let layer = -1
     while (true) {
       const layerJumps = short()
       if (layerJumps === 0) {
-        console.log('end of layer')
+        // console.log('end of layer')
         break
       }
       layer += layerJumps
 
-      console.log('Layer:', layer, '(+' + layerJumps + ')')
-
-      // debug
-      if (layer !== 0) {
-        console.warn('only support 1 layer so far, skipping...')
-        continue
-      }
+      // console.log('Layer:', layer, '(+' + layerJumps + ')')
 
       const noteBlockIntstrument = byte()
       const noteBlockKey = byte()
@@ -208,14 +205,23 @@ export function parseNBSFile(filepath: string): number[] {
         highestValue = noteBlockKey
       }
 
-      console.log('Instrument:', noteBlockIntstrument)
-      console.log('Key:', noteNameFromRawNoteBlockValue(noteBlockKey), '(', noteBlockKey - 33, '| raw:', noteBlockKey, ')')
-      console.log('Volume:', noteBlockVelocity, '%')
-      console.log('Panning:', noteBlockPanning / 200)
-      console.log('Pitch:', noteBlockPitch)
+      // console.log('Instrument:', noteBlockIntstrument)
+      // console.log(
+      //   'Key:',
+      //   noteNameFromRawNoteBlockValue(noteBlockKey),
+      //   '(',
+      //   noteBlockKey - 33,
+      //   '| raw:',
+      //   noteBlockKey,
+      //   ')'
+      // )
+      // console.log('Volume:', noteBlockVelocity, '%')
+      // console.log('Panning:', noteBlockPanning / 200)
+      // console.log('Pitch:', noteBlockPitch)
 
-      notes[currentTick] = {
+      notes[layer][currentTick] = {
         value: noteBlockKey,
+        instrument: noteBlockIntstrument,
       }
     }
   }
@@ -231,35 +237,83 @@ export function parseNBSFile(filepath: string): number[] {
   console.log('Lowest value:', lowestValue - 33)
   console.log('Highest value:', highestValue - 33)
   console.log('Range:', highestValue - lowestValue + 1)
-  const uniqueNotes = [...new Set(notes.map(n => n?.value ?? 0).filter(n => n > 0))]
-  console.log('Unique notes:', uniqueNotes.length)
 
-  if (uniqueNotes.length > 15) {
-    console.error('Too many unique notes:', uniqueNotes.length)
-    throw 'too many unique notes'
-  }
+  const allNoteIntstruments = notes
+    .map(layer =>
+      layer.map(n => (n !== undefined ? `v:${n.value}/i:${n.instrument}` : undefined)).filter(x => x !== undefined)
+    )
+    .flat()
+
+  const uniqueNotes = [...new Set(allNoteIntstruments)]
+
+  console.log('Unique notes:', uniqueNotes.length)
 
   console.log('--- ignoring other sections')
   console.log()
 
-  let output: string = '| '
-  for (const [index, note] of notes.entries()) {
-    if (note === undefined) {
-      output += '--'
-    } else {
-      output += noteNameFromRawNoteBlockValue(note.value).padEnd(2, ' ')
-    }
-    output += ' | '
-    if ((index + 1) % 8 === 0) {
-      output += '\n| '
+  function todo_noteToWeirdString(note: Note): string {
+    return `v:${note.value}/i:${note.instrument}`
+  }
+  function todo_noteValueFromWeirdString(s: string): number {
+    return Number(s.split('/i:')[0].replace('v:', ''))
+  }
+
+  const map: Record<string, boolean[]> = {}
+  for (const un of uniqueNotes) {
+    map[un] = new Array(songTickLength).fill(false)
+  }
+
+  for (let x = 0; x < songTickLength; ++x) {
+    for (let y = 0; y < layerCount; ++y) {
+      const note = notes[y][x]
+      if (note === undefined) {
+        continue
+      }
+
+      const noteString = todo_noteToWeirdString(note)
+      map[noteString][x] = true
     }
   }
-  console.log('notes:')
-  console.log(output)
 
-  const trimmedNoteValues = notes.map(x => (x ? x.value - 33 : 0))
+  // sort map keys
+  const sortedKeys = Object.keys(map).sort((a, b) => {
+    const aValue = todo_noteValueFromWeirdString(a)
+    const bValue = todo_noteValueFromWeirdString(b)
+    return aValue - bValue
+  })
+  const sortedMap: Record<string, boolean[]> = {}
+  for (const key of sortedKeys) {
+    sortedMap[key] = map[key]
+  }
+  // replace map with sortedMap
+  for (const key of Object.keys(map)) {
+    delete map[key]
+  }
+  for (const key of Object.keys(sortedMap)) {
+    map[key] = sortedMap[key]
+  }
 
-  console.log('trimmedNoteValues:', trimmedNoteValues)
+  // convert boolean arrays in map into binary string
+  for (const [key, value] of Object.entries(map)) {
+    console.log(key, '\t', value.map(x => (x ? 'X' : '.')).join(''))
+  }
+  console.log()
 
-  return trimmedNoteValues
+  return map
 }
+
+/*
+
+  // convert boolean arrays in map into binary string
+  for (const [key, value] of Object.entries(map)) {
+    let binaryString = ''
+    for (const [index, bit] of value.entries()) {
+      binaryString += bit ? '1' : '0'
+      if (index % 4 === 3) {
+        binaryString += ' '
+      }
+    }
+
+    console.log(key, '\t', binaryString)
+  }
+*/
