@@ -94,7 +94,7 @@ export async function parseNoteValues(noteValues: number[]): Promise<Uint8Array>
   return await write(data)
 }
 
-const numberSignalToDiscName: Record<number, string> = {
+const grayCodeToDiscName: Record<number, string> = {
   0: 'minecraft:wooden_shovel',
   1: 'minecraft:music_disc_13',
   2: 'minecraft:music_disc_cat',
@@ -268,6 +268,11 @@ interface BlockDataContainer {
 function streamOfNumbersToShulkerBoxes(stream: number[]): BlockDataContainer[][] {
   const mutableStream = [...stream]
 
+  if (mutableStream.every(x => x === 0)) {
+    console.log('(skipping empty stream)')
+    return []
+  }
+
   const allContainers: BlockDataContainer[][] = []
 
   let currentSlot = 0
@@ -323,7 +328,7 @@ function streamOfNumbersToShulkerBoxes(stream: number[]): BlockDataContainer[][]
       incrementOnEmpty = 0
     }
 
-    const discName = numberSignalToDiscName[value]
+    const discName = grayCodeToDiscName[value]
 
     inventorySlots.push({
       slot: new Int32(currentSlot),
