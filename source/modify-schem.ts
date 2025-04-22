@@ -288,8 +288,6 @@ function streamOfNumbersToShulkerBoxes(stream: number[]): BlockDataContainer[][]
 
     const value = mutableStream.shift()
 
-    console.log('read', value)
-
     if (value === undefined) {
       continue
     }
@@ -326,8 +324,6 @@ function streamOfNumbersToShulkerBoxes(stream: number[]): BlockDataContainer[][]
     }
 
     const discName = numberSignalToDiscName[value]
-
-    console.log('should push', discName)
 
     inventorySlots.push({
       slot: new Int32(currentSlot),
