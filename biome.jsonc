@@ -1,0 +1,11 @@
+{
+  "javascript": {
+    "formatter": {
+      "semicolons": "asNeeded",
+      "indentStyle": "space",
+      "quoteStyle": "single",
+      "arrowParentheses": "asNeeded",
+      "lineWidth": 120
+    }
+  }
+}
