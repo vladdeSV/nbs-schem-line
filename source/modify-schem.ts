@@ -283,13 +283,17 @@ function streamOfNumbersToShulkerBoxes(stream: number[]): BlockDataContainer[][]
 
   console.log('parsing stream', stream.map(x => x || 0).join(','))
 
-  while (mutableStream.length) {
+  function checkWeDontOverstepSlotLimit() {
     if (currentSlot >= 27) {
       allContainers.push([...inventorySlots])
       inventorySlots = []
       currentSlot = 0
       incrementOnNewDisc = 0
     }
+  }
+
+  while (mutableStream.length) {
+    checkWeDontOverstepSlotLimit()
 
     const value = mutableStream.shift()
 
@@ -326,6 +330,8 @@ function streamOfNumbersToShulkerBoxes(stream: number[]): BlockDataContainer[][]
       ++currentSlot
       ++incrementOnNewDisc
       incrementOnEmpty = 0
+
+      checkWeDontOverstepSlotLimit()
     }
 
     const discName = grayCodeToDiscName[value]
