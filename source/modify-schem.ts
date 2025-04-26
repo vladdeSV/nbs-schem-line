@@ -168,16 +168,15 @@ export async function parseInstrumentStreams(
 
   palette['minecraft:chest[facing=south,type=right,waterlogged=false]'] = new Int32(customPaletteBlockIds.leftChest)
   palette['minecraft:chest[facing=south,type=left,waterlogged=false]'] = new Int32(customPaletteBlockIds.rightChest)
-  palette['minecraft:stone'] = new Int32(customPaletteBlockIds.noteNotUsedBlockId)
-  palette['minecraft:oak_planks'] = new Int32(customPaletteBlockIds.singleStreamMissingBlockId)
+  palette['minecraft:coal_block'] = new Int32(customPaletteBlockIds.noteNotUsedBlockId)
+  palette['minecraft:redstone_block'] = new Int32(customPaletteBlockIds.singleStreamMissingBlockId)
 
   const blockIds: number[] = new Array(width * height * depth).fill(customPaletteBlockIds.noteNotUsedBlockId)
+  for (let i = 0; i < height; i++) {
+    const blockIndex = coordinateToIndexXZY(0, 0, i)
+    const instrumentId = instrumentIdsOrdered[i]
 
-  for (const [index, instrumentId] of instrumentBlockIds.entries()) {
-    const y = heightFromInstrument(index)
-
-    const blockIndex = coordinateToIndexXZY(0, 0, y)
-    blockIds[blockIndex] = index
+    blockIds[blockIndex] = instrumentId
   }
 
   const blockEntities: BlockEntity[] = []
@@ -188,8 +187,6 @@ export async function parseInstrumentStreams(
       const noteId: NoteId = Number(noteIdAsString)
 
       function createDoubleChestsInGlobalData(startX: number, y: number, stream: GrayCodeStream) {
-        console.log('setting double chest at x', startX, 'y', y)
-
         const doubleChestStartIndex = coordinateToIndexXZY(startX, 0, y)
         if (!stream.every(v => v === 0)) {
           blockIds[doubleChestStartIndex] = customPaletteBlockIds.leftChest
@@ -255,11 +252,6 @@ export async function parseInstrumentStreams(
 
   const schem = await read(readFileSync('./resource/base.schem'))
   ;(schem.data as any).Schematic = data
-
-  console.log()
-  console.log('height', height)
-  console.log('size', width * height * depth)
-  console.log('leng', blockIds.length)
 
   return await write(schem)
 }
