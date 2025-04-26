@@ -1,13 +1,26 @@
-import { readFileSync } from 'fs'
+import { readFileSync } from 'node:fs'
 
-export function parseNBSFile(filepath: string): Record<string, boolean[]> {
-  interface Note {
-    value: number
-    instrument: number
-  }
+export type { InstrumentId, Note, NoteId, Stream }
 
+export function parseNBSFile(filepath: string): Record<InstrumentId, Record<NoteId, Stream>> {
   const nodeBuffer = readFileSync(filepath)
   const arrayBuffer = nodeBuffer.buffer.slice(nodeBuffer.byteOffset, nodeBuffer.byteOffset + nodeBuffer.byteLength)
+
+  const layers = createNoteLayers(arrayBuffer)
+  const streams = convertNoteLayersToBinaryStreams(layers)
+  return streams
+}
+
+type InstrumentId = number
+type NoteId = number
+type Stream = boolean[]
+
+interface Note {
+  value: number
+  instrument: number
+}
+
+function createNoteLayers(arrayBuffer: ArrayBuffer | SharedArrayBuffer): (Note | undefined)[][] {
   const view = new DataView(arrayBuffer)
 
   let offset = 0
@@ -57,10 +70,10 @@ export function parseNBSFile(filepath: string): Record<string, boolean[]> {
 
   const NBSVersion = byte()
   const vanillaInstrumentCount = byte()
-  const songTickLength = short()
+  const songTickLength = short() + 1
 
   console.log('NBS version:', NBSVersion)
-  console.log('Vanilla intrument count.', vanillaInstrumentCount)
+  console.log('Vanilla intrument count:', vanillaInstrumentCount)
   console.log('Song tick length:', songTickLength)
 
   const layerCount = short()
@@ -82,90 +95,51 @@ export function parseNBSFile(filepath: string): Record<string, boolean[]> {
   console.log('Tempo:', tempo)
 
   const autoSave = byte()
-  console.log('Auto save:', autoSave == 1)
+  // console.log('Auto save:', autoSave == 1)
 
   const autoSaveDuration = byte()
-  console.log('Auto save duration:', autoSaveDuration)
+  // console.log('Auto save duration:', autoSaveDuration)
 
   const timeSignature = byte()
   console.log('Time signature:', `${timeSignature}/4`)
 
   const minutesSpent = integer()
-  console.log('Minutes spent:', minutesSpent)
+  // console.log('Minutes spent:', minutesSpent)
 
   const leftClicks = integer()
-  console.log('Left clicks:', leftClicks)
+  // console.log('Left clicks:', leftClicks)
 
   const rightClicks = integer()
-  console.log('Right clicks:', rightClicks)
+  // console.log('Right clicks:', rightClicks)
 
   const blocksAdded = integer()
-  console.log('Blocks added:', blocksAdded)
+  // console.log('Blocks added:', blocksAdded)
 
   const blocksRemoved = integer()
-  console.log('Blocks removed:', blocksRemoved)
+  // console.log('Blocks removed:', blocksRemoved)
 
   const midi = readString()
-  console.log('Midi:', midi)
+  // console.log('Midi:', midi)
 
   const loop = byte()
-  console.log('Loop:', loop == 1)
+  // console.log('Loop:', loop == 1)
 
   const maxLoops = byte()
-  console.log('Max loops:', maxLoops == 0 ? 'Infinite' : maxLoops)
+  // console.log('Max loops:', maxLoops == 0 ? 'Infinite' : maxLoops)
 
   const loopStartTick = short()
-  console.log('Loop start tick:', loopStartTick)
-
-  console.log('--- Second section')
+  // console.log('Loop start tick:', loopStartTick)
 
   // section 2
+  console.log()
+  console.log('--- Second section')
+
   let currentTick = -1
 
-  const notes: Array<(Note | undefined)[]> = new Array(layerCount)
+  const layers: (Note | undefined)[][] = new Array(layerCount)
   for (let i = 0; i < layerCount; ++i) {
-    notes[i] = Array(songTickLength)
+    layers[i] = new Array(songTickLength)
   }
-  function noteNameFromRawNoteBlockValue(value: number) {
-    const v = value - 33
-
-    const f = (n: number) => {
-      let a = n % 12
-      switch (a) {
-        case 0:
-          return 'F#'
-        case 1:
-          return 'G'
-        case 2:
-          return 'G#'
-        case 3:
-          return 'A'
-        case 4:
-          return 'A#'
-        case 5:
-          return 'B'
-        case 6:
-          return 'C'
-        case 7:
-          return 'C#'
-        case 8:
-          return 'D'
-        case 9:
-          return 'D#'
-        case 10:
-          return 'E'
-        case 11:
-          return 'F'
-        default:
-          throw 'invalid value'
-      }
-    }
-
-    return f(v)
-  }
-
-  let lowestValue = undefined
-  let highestValue = undefined
 
   while (true) {
     // console.log('----------> loop')
@@ -197,123 +171,84 @@ export function parseNBSFile(filepath: string): Record<string, boolean[]> {
       const noteBlockPanning = ubyte()
       const noteBlockPitch = short()
 
-      if (lowestValue === undefined || noteBlockKey < lowestValue) {
-        lowestValue = noteBlockKey
-      }
-
-      if (highestValue === undefined || noteBlockKey > highestValue) {
-        highestValue = noteBlockKey
-      }
-
-      // console.log('Instrument:', noteBlockIntstrument)
-      // console.log(
-      //   'Key:',
-      //   noteNameFromRawNoteBlockValue(noteBlockKey),
-      //   '(',
-      //   noteBlockKey - 33,
-      //   '| raw:',
-      //   noteBlockKey,
-      //   ')'
-      // )
-      // console.log('Volume:', noteBlockVelocity, '%')
-      // console.log('Panning:', noteBlockPanning / 200)
-      // console.log('Pitch:', noteBlockPitch)
-
-      notes[layer][currentTick] = {
+      layers[layer][currentTick] = {
         value: noteBlockKey,
         instrument: noteBlockIntstrument,
       }
     }
   }
+  return layers
+}
 
-  if (lowestValue === undefined) {
-    lowestValue = 0
-  }
-  if (highestValue === undefined) {
-    highestValue = 0
-  }
-
-  console.log()
-  console.log('Lowest value:', lowestValue - 33)
-  console.log('Highest value:', highestValue - 33)
-  console.log('Range:', highestValue - lowestValue + 1)
-
-  const allNoteIntstruments = notes
-    .map(layer =>
-      layer.map(n => (n !== undefined ? `v:${n.value}/i:${n.instrument}` : undefined)).filter(x => x !== undefined)
-    )
-    .flat()
-
-  const uniqueNotes = [...new Set(allNoteIntstruments)]
-
-  console.log('Unique notes:', uniqueNotes.length)
-
-  console.log('--- ignoring other sections')
-  console.log()
-
-  function todo_noteToWeirdString(note: Note): string {
-    return `v:${note.value}/i:${note.instrument}`
-  }
-  function todo_noteValueFromWeirdString(s: string): number {
-    return Number(s.split('/i:')[0].replace('v:', ''))
-  }
-
-  const map: Record<string, boolean[]> = {}
-  for (const un of uniqueNotes) {
-    map[un] = new Array(songTickLength).fill(false)
-  }
-
-  for (let x = 0; x < songTickLength; ++x) {
-    for (let y = 0; y < layerCount; ++y) {
-      const note = notes[y][x]
+function convertNoteLayersToBinaryStreams(
+  layers: (Note | undefined)[][],
+): Record<InstrumentId, Record<NoteId, Stream>> {
+  // get all instruments
+  const instruments = new Set<InstrumentId>()
+  for (const layer of layers) {
+    for (const note of layer) {
       if (note === undefined) {
         continue
       }
 
-      const noteString = todo_noteToWeirdString(note)
-      map[noteString][x] = true
+      instruments.add(note.instrument)
     }
   }
 
-  // sort map keys
-  const sortedKeys = Object.keys(map).sort((a, b) => {
-    const aValue = todo_noteValueFromWeirdString(a)
-    const bValue = todo_noteValueFromWeirdString(b)
-    return aValue - bValue
-  })
-  const sortedMap: Record<string, boolean[]> = {}
-  for (const key of sortedKeys) {
-    sortedMap[key] = map[key]
-  }
-  // replace map with sortedMap
-  for (const key of Object.keys(map)) {
-    delete map[key]
-  }
-  for (const key of Object.keys(sortedMap)) {
-    map[key] = sortedMap[key]
+  const songTickLength = layers[0]?.length ?? 0
+
+  // create sorted keys for each instrument, later to be used
+  const streams: Record<InstrumentId, Record<NoteId, Stream>> = {}
+  for (const instrument of [...instruments].sort()) {
+    streams[instrument] = {}
+    // loop all 25 note values
+    for (let i = 0; i < 25; ++i) {
+      streams[instrument][i] = new Array(songTickLength).fill(false)
+    }
   }
 
-  // convert boolean arrays in map into binary string
-  for (const [key, value] of Object.entries(map)) {
-    console.log(key, '\t', value.map(x => (x ? 'X' : '.')).join(''))
+  for (const layer of layers) {
+    for (const [index, note] of layer.entries()) {
+      if (note === undefined) {
+        continue
+      }
+
+      const shiftedNoteValue = note.value - 33
+
+      if (shiftedNoteValue < 0 || shiftedNoteValue > 24) {
+        console.error('invalid note value', note.value, '; expected to be between', 0, '-', 24, ' (33-57)')
+        process.exit(1)
+      }
+
+      streams[note.instrument][shiftedNoteValue][index] = true
+    }
   }
-  console.log()
 
-  return map
-}
-
-/*
-
-  // convert boolean arrays in map into binary string
-  for (const [key, value] of Object.entries(map)) {
-    let binaryString = ''
-    for (const [index, bit] of value.entries()) {
-      binaryString += bit ? '1' : '0'
-      if (index % 4 === 3) {
-        binaryString += ' '
+  // remove empty streams
+  for (const [instrumentIdAsString, notes] of Object.entries(streams)) {
+    const instrument: InstrumentId = Number(instrumentIdAsString)
+    for (const [noteValueAsString, stream] of Object.entries(notes)) {
+      const note: NoteId = Number(noteValueAsString)
+      if (stream.every(x => x === false)) {
+        delete streams[instrument][note]
       }
     }
-
-    console.log(key, '\t', binaryString)
   }
-*/
+
+  for (const [instrument, stream] of Object.entries(streams)) {
+    if (stream === undefined) {
+      console.error('instrument not found:', instrument)
+      process.exit(1)
+    }
+
+    console.log('# instrument', instrument)
+
+    for (const [note, bools] of Object.entries(stream)) {
+      const s = bools.map(x => (x ? 'X' : '-')).join('')
+      console.log(`${note}:\t${s}`)
+    }
+    console.log()
+  }
+
+  return streams
+}

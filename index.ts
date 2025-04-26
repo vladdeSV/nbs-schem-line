@@ -1,7 +1,7 @@
-import { writeFileSync } from 'fs'
-import { schem2HardCodedInstrument } from './source/modify-schem.ts'
+import { writeFileSync } from 'node:fs'
+import { parseInstrumentStreams } from './source/modify-schem.ts'
 import { parseNBSFile } from './source/parse-nbs.ts'
-import { bar } from './source/process-binary-stream.ts'
+import { processBinaryStreams } from './source/process-binary-stream.ts'
 
 // check if -v flag is passed, if not, set console.log to noop
 if (!process.argv.includes('-v')) {
@@ -24,10 +24,9 @@ if (output === undefined) {
   console.info(`info: no output file specified, using './${output}'`)
 }
 
-const noteSignals = parseNBSFile(filepath)
-const data: Uint8Array<ArrayBufferLike> = await schem2HardCodedInstrument(bar(noteSignals))
-// const data: Uint8Array<ArrayBufferLike> = await parseNoteValues(noteSignals)
+const notes = parseNBSFile(filepath)
+const processed = processBinaryStreams(notes)
+const data: Uint8Array<ArrayBufferLike> = await parseInstrumentStreams(processed)
 
 writeFileSync(output, data)
-
 console.info(`info: wrote to file '${output}'!`)

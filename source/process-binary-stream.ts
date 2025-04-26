@@ -1,93 +1,124 @@
-/// ai generated
-function padToMultipleOf4Mutating(arr: boolean[]): void {
-  const remainder = arr.length % 4
-  const paddingNeeded = remainder === 0 ? 0 : 4 - remainder
-  for (let i = 0; i < paddingNeeded; i++) {
-    arr.push(false)
-  }
+import type { InstrumentId, NoteId, Stream } from './parse-nbs.js'
+
+export function processBinaryStreams(
+  streams: Record<InstrumentId, Record<NoteId, Stream>>,
+): Record<InstrumentId, Record<NoteId, [GrayCodeStream, GrayCodeStream]>> {
+  const splitStreams = splitBinaryStreams(streams)
+  const processedStreams = processStreams(splitStreams)
+
+  return processedStreams
 }
 
-/// ai generated, wth?
-function separateEveryOther<T>(input: T[]): [T[], T[]] {
-  const first: T[] = []
-  const second: T[] = []
+function splitBinaryStreams(
+  streams: Record<InstrumentId, Record<NoteId, Stream>>,
+): Record<InstrumentId, Record<NoteId, [Stream, Stream]>> {
+  /// ai generated
+  function separateEveryOther(stream: Stream): [Stream, Stream] {
+    const first: Stream = []
+    const second: Stream = []
+    for (let i = 0; i < stream.length; ++i) {
+      if (i % 2 === 0) {
+        first.push(stream[i])
+      } else {
+        second.push(stream[i])
+      }
+    }
+    return [first, second]
+  }
 
-  for (let i = 0; i < input.length; i += 2) {
-    first.push(input[i])
-    if (i + 1 < input.length) {
-      second.push(input[i + 1])
+  /// ai generated
+  function padToMultipleOf4Mutating(stream: Stream): void {
+    const remainder = stream.length % 4
+    const paddingNeeded = remainder === 0 ? 0 : 4 - remainder
+    for (let i = 0; i < paddingNeeded; i++) {
+      stream.push(false)
     }
   }
 
-  return [first, second]
+  const result: Record<InstrumentId, Record<NoteId, [Stream, Stream]>> = {}
+  for (const [instrumentIdAsString, notes] of Object.entries(streams)) {
+    const instrument: InstrumentId = Number(instrumentIdAsString)
+
+    result[instrument] = {}
+    for (const [noteValueAsString, stream] of Object.entries(notes)) {
+      const note: NoteId = Number(noteValueAsString)
+
+      const [left, right] = separateEveryOther(stream)
+      padToMultipleOf4Mutating(left)
+      padToMultipleOf4Mutating(right)
+      result[instrument][note] = [left, right]
+    }
+  }
+
+  return result
 }
 
-/// used to get the redstone signal (thus, disc) from the note value
-function getReverseGrayCode(value: number): number | undefined {
-  const reverseGrayCodeLookup: Record<number, number> = {
-    0b0000: 0,
-    0b0001: 1,
-    0b0011: 2,
-    0b0010: 3,
-    0b0110: 4,
-    0b0111: 5,
-    0b0101: 6,
-    0b0100: 7,
-    0b1100: 8,
-    0b1101: 9,
-    0b1111: 10,
-    0b1110: 11,
-    0b1010: 12,
-    0b1011: 13,
-    0b1001: 14,
-    0b1000: 15,
+export type GrayCodeStream = number[]
+function processStreams(
+  a: Record<InstrumentId, Record<NoteId, [Stream, Stream]>>,
+): Record<InstrumentId, Record<NoteId, [GrayCodeStream, GrayCodeStream]>> {
+  function encodeStream(stream: Stream): GrayCodeStream {
+    console.assert(stream.length % 4 === 0, 'stream length is not a multiple of 4', stream.length)
+
+    /// used to get the redstone signal (thus, disc) from the note value
+    function getReverseGrayCode(value: number): number {
+      const reverseGrayCodeLookup: Record<number, number> = {
+        /* 0000 */ 0: 0,
+        /* 0001 */ 1: 1,
+        /* 0011 */ 3: 2,
+        /* 0010 */ 2: 3,
+        /* 0110 */ 6: 4,
+        /* 0111 */ 7: 5,
+        /* 0101 */ 5: 6,
+        /* 0100 */ 4: 7,
+        /* 1100 */ 12: 8,
+        /* 1101 */ 13: 9,
+        /* 1111 */ 15: 10,
+        /* 1110 */ 14: 11,
+        /* 1010 */ 10: 12,
+        /* 1011 */ 11: 13,
+        /* 1001 */ 9: 14,
+        /* 1000 */ 8: 15,
+      }
+
+      if (!(value in reverseGrayCodeLookup)) {
+        console.error('value not in reverseGrayCodeLookup', value)
+        process.exit(1)
+      }
+
+      return reverseGrayCodeLookup[value]
+    }
+
+    const grayCodedStream: GrayCodeStream = []
+    for (let i = 0; i < stream.length; i += 4) {
+      const byte =
+        ((stream[i] ? 1 : 0) << 3) |
+        ((stream[i + 1] ? 1 : 0) << 2) |
+        ((stream[i + 2] ? 1 : 0) << 1) |
+        (stream[i + 3] ? 1 : 0)
+
+      const grayCodedByte = getReverseGrayCode(byte)
+      grayCodedStream.push(grayCodedByte)
+    }
+
+    return grayCodedStream
   }
 
-  return reverseGrayCodeLookup[value] !== undefined ? reverseGrayCodeLookup[value] : undefined
-}
+  const result: Record<InstrumentId, Record<NoteId, [GrayCodeStream, GrayCodeStream]>> = {}
+  for (const [instrumentIdAsString, notes] of Object.entries(a)) {
+    const instrument: InstrumentId = Number(instrumentIdAsString)
 
-/// ai generated
-function foo(input: boolean[]): [number[], number[]] {
-  const [first, second] = separateEveryOther(input)
+    result[instrument] = {}
+    for (const [noteValueAsString, streams] of Object.entries(notes)) {
+      const note: NoteId = Number(noteValueAsString)
+      const [leftStream, rightStream] = streams
 
-  if (first.length !== second.length) {
-    second.push(false)
-  }
-  console.assert(first.length === second.length, first.length, second.length)
+      const leftGrayCodedStream = encodeStream(leftStream)
+      const rightGrayCodedStream = encodeStream(rightStream)
 
-  padToMultipleOf4Mutating(first)
-  padToMultipleOf4Mutating(second)
-
-  console.assert(first.length === second.length, first.length, second.length)
-
-  const firstResult: number[] = []
-  const secondResult: number[] = []
-
-  for (let i = 0; i < first.length; i += 4) {
-    const byte =
-      ((first[i] ? 1 : 0) << 3) | ((first[i + 1] ? 1 : 0) << 2) | ((first[i + 2] ? 1 : 0) << 1) | (first[i + 3] ? 1 : 0)
-    firstResult.push(getReverseGrayCode(byte) ?? -1)
+      result[instrument][note] = [leftGrayCodedStream, rightGrayCodedStream]
+    }
   }
 
-  for (let i = 0; i < second.length; i += 4) {
-    const byte =
-      ((second[i] ? 1 : 0) << 3) |
-      ((second[i + 1] ? 1 : 0) << 2) |
-      ((second[i + 2] ? 1 : 0) << 1) |
-      (second[i + 3] ? 1 : 0)
-    secondResult.push(getReverseGrayCode(byte) ?? -1)
-  }
-
-  return [firstResult, secondResult]
-}
-
-export type Hm = undefined | [number[], number[]]
-export function bar(parsed: Record<string, boolean[]>): Hm[] {
-  const dualstreamsPerNote: Hm[] = new Array(25)
-  for (const [key, value] of Object.entries(parsed)) {
-    const keyValue = parseInt(key.split('/i:')[0].replace('v:', '')) - 33
-    dualstreamsPerNote[keyValue] = foo(value)
-  }
-
-  return dualstreamsPerNote
+  return result
 }

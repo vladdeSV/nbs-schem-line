@@ -7,5 +7,12 @@
       "arrowParentheses": "asNeeded",
       "lineWidth": 120
     }
+  },
+  "linter": {
+    "rules": {
+      "style": {
+        "useBlockStatements": "error"
+      }
+    }
   }
 }
