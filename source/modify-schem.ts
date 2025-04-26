@@ -361,6 +361,7 @@ function createShulkerBoxContainerListFromItemRepresentations(items: ItemSlotRep
 
     if (currentlyIsPause) {
       incrementGoingFromPauseToDisc++
+      currentlyIsPause = false
     }
 
     components.push({
