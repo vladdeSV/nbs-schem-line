@@ -171,6 +171,11 @@ function createNoteLayers(arrayBuffer: ArrayBuffer | SharedArrayBuffer): (Note |
       const noteBlockPanning = ubyte()
       const noteBlockPitch = short()
 
+      if (noteBlockIntstrument > 15) {
+        console.warn(`encountered custom instrument (id: ${noteBlockIntstrument}), skipping`)
+        continue
+      }
+
       layers[layer][currentTick] = {
         value: noteBlockKey,
         instrument: noteBlockIntstrument,
@@ -235,6 +240,7 @@ function convertNoteLayersToBinaryStreams(
     }
   }
 
+  /*
   for (const [instrument, stream] of Object.entries(streams)) {
     if (stream === undefined) {
       console.error('instrument not found:', instrument)
@@ -249,6 +255,7 @@ function convertNoteLayersToBinaryStreams(
     }
     console.log()
   }
+    */
 
   return streams
 }
