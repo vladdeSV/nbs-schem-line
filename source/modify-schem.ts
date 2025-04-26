@@ -169,7 +169,7 @@ export async function parseInstrumentStreams(
   palette['minecraft:chest[facing=south,type=right,waterlogged=false]'] = new Int32(customPaletteBlockIds.leftChest)
   palette['minecraft:chest[facing=south,type=left,waterlogged=false]'] = new Int32(customPaletteBlockIds.rightChest)
   palette['minecraft:coal_block'] = new Int32(customPaletteBlockIds.noteNotUsedBlockId)
-  palette['minecraft:redstone_block'] = new Int32(customPaletteBlockIds.singleStreamMissingBlockId)
+  palette['minecraft:quartz_block'] = new Int32(customPaletteBlockIds.singleStreamMissingBlockId)
 
   const blockIds: number[] = new Array(width * height * depth).fill(customPaletteBlockIds.noteNotUsedBlockId)
   for (let i = 0; i < height; i++) {
