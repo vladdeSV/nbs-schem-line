@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs'
 import type { InstrumentId, NoteId } from './parse-nbs'
 import type { GrayCodeStream } from './process-binary-stream'
 
+type Direction = 'north' | 'south' | 'east' | 'west'
+
 interface Schem {
   Schematic: WorldEditSchematic
 }
@@ -123,6 +125,38 @@ const instrumentBlockIds = [
   'minecraft:glowstone', // pling
 ] as const
 
+
+const customPaletteBlockIds = {
+  chestNorthLeft: 100,
+  chestNorthRight: 101,
+  chestSouthLeft: 102,
+  chestSouthRight: 103,
+  chestEastLeft: 104,
+  chestEastRight: 105,
+  chestWestLeft: 106,
+  chestWestRight: 107,
+  
+  noteNotUsedBlockId: 108, // note does not exist at all
+  singleStreamMissingBlockId: 109, // missing one of the two double chests
+} as const
+
+function getChestPaletteId(side: 'left' | 'right', direction: Direction): number {
+  if (direction === 'north') {
+    return side === 'left' ? customPaletteBlockIds.chestNorthLeft : customPaletteBlockIds.chestNorthRight
+  }
+  if (direction === 'south') {
+    return side === 'left' ? customPaletteBlockIds.chestSouthLeft : customPaletteBlockIds.chestSouthRight
+  }
+  if (direction === 'east') {
+    return side === 'left' ? customPaletteBlockIds.chestEastLeft : customPaletteBlockIds.chestEastRight
+  }
+  if (direction === 'west') {
+    return side === 'left' ? customPaletteBlockIds.chestWestLeft : customPaletteBlockIds.chestWestRight
+  }
+  
+  throw new Error(`Invalid direction: ${direction}`)
+}
+
 export async function parseInstrumentStreams(
   input: Record<InstrumentId, Record<NoteId, [GrayCodeStream, GrayCodeStream]>>,
 ): Promise<Uint8Array> {
@@ -159,15 +193,17 @@ export async function parseInstrumentStreams(
     palette[blockName] = new Int32(Number(instrumentId))
   }
 
-  const customPaletteBlockIds = {
-    leftChest: 100,
-    rightChest: 101,
-    noteNotUsedBlockId: 102, // note does not exist at all
-    singleStreamMissingBlockId: 103, // missing one of the two double chests
-  }
-
-  palette['minecraft:chest[facing=south,type=right,waterlogged=false]'] = new Int32(customPaletteBlockIds.leftChest)
-  palette['minecraft:chest[facing=south,type=left,waterlogged=false]'] = new Int32(customPaletteBlockIds.rightChest)
+  // Add all directional chest variants
+  palette['minecraft:chest[facing=north,type=left,waterlogged=false]'] = new Int32(customPaletteBlockIds.chestNorthLeft)
+  palette['minecraft:chest[facing=north,type=right,waterlogged=false]'] = new Int32(customPaletteBlockIds.chestNorthRight)
+  palette['minecraft:chest[facing=south,type=left,waterlogged=false]'] = new Int32(customPaletteBlockIds.chestSouthLeft)
+  palette['minecraft:chest[facing=south,type=right,waterlogged=false]'] = new Int32(customPaletteBlockIds.chestSouthRight)
+  palette['minecraft:chest[facing=east,type=left,waterlogged=false]'] = new Int32(customPaletteBlockIds.chestEastLeft)
+  palette['minecraft:chest[facing=east,type=right,waterlogged=false]'] = new Int32(customPaletteBlockIds.chestEastRight)
+  palette['minecraft:chest[facing=west,type=left,waterlogged=false]'] = new Int32(customPaletteBlockIds.chestWestLeft)
+  palette['minecraft:chest[facing=west,type=right,waterlogged=false]'] = new Int32(customPaletteBlockIds.chestWestRight)
+  
+  // Utility blocks
   palette['minecraft:blackstone_stairs[facing=south,half=top,shape=straight,waterlogged=false]'] = new Int32(
     customPaletteBlockIds.noteNotUsedBlockId,
   )
@@ -193,8 +229,8 @@ export async function parseInstrumentStreams(
       function createDoubleChestsInGlobalData(startX: number, y: number, stream: GrayCodeStream) {
         const doubleChestStartIndex = coordinateToIndexXZY(startX, 0, y)
         if (!stream.every(v => v === 0)) {
-          blockIds[doubleChestStartIndex] = customPaletteBlockIds.leftChest
-          blockIds[doubleChestStartIndex + 1] = customPaletteBlockIds.rightChest
+          blockIds[doubleChestStartIndex] = getChestPaletteId('right', 'south')
+          blockIds[doubleChestStartIndex + 1] = getChestPaletteId('left', 'south')
 
           function createBlockEntityFromData(x: number, y: number, contents: BlockEntityData[]): BlockEntity {
             return {
