@@ -3,9 +3,9 @@ import { readFileSync } from 'node:fs'
 import type { InstrumentId, NoteId } from './parse-nbs'
 import type { GrayCodeStream } from './process-binary-stream'
 
-export { findInstrumentPosition, getLocalCoordinates, instrumentBlockIds }
+export { findInstrumentPositions, getLocalCoordinates, instrumentBlockIds }
 
-const WALL_DISTANCE = 5 // <-- debug //130 // distance from the center to the disc reader wall
+const WALL_DISTANCE = 14 // <-- debug //130 // distance from the center to the disc reader wall
 const VERTICAL_SPACING = 11 // blocks between each row of chests
 const GLOBAL_Y_OFFSET = 0 // global y offset for all blocks, for tweaking everything all at once :)
 
@@ -131,7 +131,7 @@ const instrumentBlockIds = [
   'minecraft:hay_block', // banjo
   'minecraft:glowstone', // pling
 ] as const
-// type InstrumentName = typeof instrumentBlockIds[number] maybe not right now
+export type InstrumentName = (typeof instrumentBlockIds)[number]
 
 // Create reverse lookup from block name to instrument ID
 const blockNameToInstrumentId = Object.fromEntries(
@@ -151,8 +151,8 @@ const directionSectionToInstrument: Record<Direction, Record<Section, Instrument
     top: blockNameToInstrumentId['minecraft:clay'],
     middle: blockNameToInstrumentId['minecraft:iron_block'],
     bottom: blockNameToInstrumentId['minecraft:bone_block'],
-    'percussion-left': blockNameToInstrumentId['minecraft:sand'],
-    'percussion-right': blockNameToInstrumentId['minecraft:glass'],
+    'percussion-left': blockNameToInstrumentId['minecraft:glass'],
+    'percussion-right': blockNameToInstrumentId['minecraft:sand'],
   },
   east: {
     top: blockNameToInstrumentId['minecraft:emerald_block'],
@@ -165,8 +165,8 @@ const directionSectionToInstrument: Record<Direction, Record<Section, Instrument
     top: blockNameToInstrumentId['minecraft:white_wool'],
     middle: blockNameToInstrumentId['minecraft:oak_planks'],
     bottom: blockNameToInstrumentId['minecraft:dirt'],
-    'percussion-left': blockNameToInstrumentId['minecraft:stone'],
-    'percussion-right': blockNameToInstrumentId['minecraft:sand'],
+    'percussion-left': blockNameToInstrumentId['minecraft:sand'],
+    'percussion-right': blockNameToInstrumentId['minecraft:stone'],
   },
 } as const
 
@@ -186,7 +186,7 @@ const customPaletteBlockIds = {
 } as const
 
 const discReaderLayout: string[][] = (() => {
-  const csvContent = readFileSync('./resource/disc-reader-layout.csv', 'utf-8')
+  const csvContent = readFileSync('./resource/disc-reader-layout.13x8.csv', 'utf-8')
   const layout = csvContent
     .trim()
     .split('\n')
@@ -235,29 +235,34 @@ function getChestPaletteId(side: 'left' | 'right', direction: Direction): number
 }
 
 // Helper function: Step 1 - Find direction and section for an instrument
-function findInstrumentPosition(instrumentId: InstrumentId): { direction: Direction; section: Section } | undefined {
+function findInstrumentPositions(instrumentId: InstrumentId): { direction: Direction; section: Section }[] {
+  const possiblePositions: { direction: Direction; section: Section }[] = []
+
   for (const [direction, sections] of Object.entries(directionSectionToInstrument) as [
     Direction,
     Record<Section, InstrumentId>,
   ][]) {
     for (const [section, mappedInstrumentId] of Object.entries(sections) as [Section, InstrumentId][]) {
       if (mappedInstrumentId === instrumentId) {
-        return { direction, section }
+        possiblePositions.push({ direction, section })
       }
     }
   }
-  return undefined
+
+  if (possiblePositions.length === 0) {
+    console.error(`instrument ${instrumentId} not found in layout`)
+    process.exit(1)
+  }
+
+  return possiblePositions
 }
 
 // Helper function: Step 2 - Get local coordinates from CSV layout
 function getLocalCoordinates(
   instrumentId: InstrumentId,
   noteId: NoteId,
-): { x: number; y: number; direction: Direction } | undefined {
-  const position = findInstrumentPosition(instrumentId)
-  if (!position) {
-    return undefined
-  }
+): { x: number; y: number; direction: Direction } {
+  const positions = findInstrumentPositions(instrumentId)
 
   const sectionToLetter: Record<Section, string> = {
     top: 'A',
@@ -267,44 +272,54 @@ function getLocalCoordinates(
     'percussion-right': 'D',
   }
 
-  const letter = sectionToLetter[position.section]
-  const noteIndex = noteId.toString().padStart(2, '0')
-  const targetPattern = `${letter}${noteIndex}`
+  if (positions.length > 1) {
+    console.info(`glc: instrument ${instrumentBlockIds[instrumentId]} has multiple positions:`, positions)
+  }
 
-  for (let y = 0; y < discReaderLayout.length; y++) {
-    for (let x = 0; x < discReaderLayout[y].length; x++) {
-      if (discReaderLayout[y][x] === targetPattern) {
-        return { x, y, direction: position.direction }
+  for (const position of positions) {
+    const letter = sectionToLetter[position.section]
+    const noteIndex = noteId.toString().padStart(2, '0')
+    const targetPattern = `${letter}${noteIndex}`
+
+    console.debug(`glc: searching for ${targetPattern}`)
+
+    for (let y = 0; y < discReaderLayout.length; y++) {
+      for (let x = 0; x < discReaderLayout[y].length; x++) {
+        if (discReaderLayout[y][x] === targetPattern) {
+          console.debug(`glc: found at x:${x}, y:${y} in section ${position.section} (${position.direction})`)
+          return { x, y, direction: position.direction }
+        }
       }
     }
   }
 
-  return undefined
+  console.error(`glc: instrument ${instrumentBlockIds[instrumentId]} note ${noteId} not found in layout`)
+  process.exit(1)
 }
 
 // Helper function: Step 3 - Convert local coordinates to world coordinates (coordinates within the schematic region)
-function getWorldCoordinates(
+function getInRegionCoordinates(
   direction: Direction,
   localX: number,
   localY: number,
 ): { x: number; y: number; z: number } {
-  const d = WALL_DISTANCE
-  const directionOffsets = {
-    north: { x: 0, z: -d },
-    south: { x: 0, z: d },
-    east: { x: d, z: 0 },
-    west: { x: -d, z: 0 },
-  }
+  const invertedY = discReaderLayout.length - 1 - localY
+  const quarterWallDistance = Math.floor(WALL_DISTANCE / 4)
+  const fullWidth = WALL_DISTANCE * 2
 
-  const offset = directionOffsets[direction]
-
-  return {
-    x: offset.x + localX,
-    y: GLOBAL_Y_OFFSET + localY * (1 + VERTICAL_SPACING),
-    z: offset.z,
+  switch (direction) {
+    case 'south':
+      return { x: WALL_DISTANCE * 2 - quarterWallDistance - localX, y: invertedY, z: fullWidth }
+    case 'west':
+      return { x: 0, y: invertedY, z: WALL_DISTANCE * 2 - quarterWallDistance - localX }
+    case 'north':
+      return { x: localX + quarterWallDistance, y: invertedY, z: 0 }
+    case 'east':
+      return { x: fullWidth, y: invertedY, z: localX + quarterWallDistance }
   }
 }
 
+/* todo: fix work with mulitple possible positions
 // Helper function: Combined - Get chest position from instrument and note
 function getChestPosition(instrumentId: InstrumentId, noteId: NoteId): { x: number; y: number; z: number } | undefined {
   const localCoords = getLocalCoordinates(instrumentId, noteId)
@@ -317,8 +332,9 @@ function getChestPosition(instrumentId: InstrumentId, noteId: NoteId): { x: numb
     return undefined
   }
 
-  return getWorldCoordinates(position.direction, localCoords.x, localCoords.y)
+  return getInRegionCoordinates(position.direction, localCoords.x, localCoords.y)
 }
+*/
 
 export async function parseInstrumentStreams(
   input: Record<InstrumentId, Record<NoteId, [GrayCodeStream, GrayCodeStream]>>,
@@ -335,18 +351,6 @@ export async function parseInstrumentStreams(
   const height = discReaderLayout.length
 
   const coordinateToIndexXZY = createAccessIndexFunctionXZY(width, depth, height)
-
-  function heightFromInstrument(instrumentId: InstrumentId): number {
-    const y = instrumentIdsOrdered.findIndex(n => n === instrumentId)
-
-    // will go out of bounds
-    if (y === -1 || y >= height) {
-      console.warn('attempted to access', instrumentId, 'which does not exist in', instrumentIdsOrdered.join(', '))
-      return height - 1
-    }
-
-    return y
-  }
 
   // create the palette
   const palette: BlockPalette = {}
@@ -374,14 +378,31 @@ export async function parseInstrumentStreams(
   )
 
   const blockIds: number[] = new Array(width * height * depth).fill(customPaletteBlockIds.air)
-  /*
-  for (let i = 0; i < height; i++) {
-    const blockIndex = coordinateToIndexXZY(0, 0, i)
-    const instrumentId = instrumentIdsOrdered[i]
 
-    blockIds[blockIndex] = instrumentId
+  // section: debug test
+
+  const debugNoteValues: [(typeof instrumentBlockIds)[number], NoteId][] = []
+  for (const instrumentName of instrumentBlockIds) {
+    for (let noteId = 0; noteId < 25; noteId++) {
+      debugNoteValues.push([instrumentName, noteId])
+    }
   }
-  */
+
+  for (const [blockName, noteId] of debugNoteValues) {
+    const instrumentId: InstrumentId = instrumentBlockIds.indexOf(blockName)
+
+    const localCoords = getLocalCoordinates(instrumentId, noteId)
+    if (!localCoords) {
+      throw `whaa, ${instrumentBlockIds[instrumentId]} with note ${noteId} not found in layout`
+    }
+
+    const inRegionCoords = getInRegionCoordinates(localCoords.direction, localCoords.x, localCoords.y)
+    console.debug(blockName, noteId, 'x:', inRegionCoords.x, 'y:', inRegionCoords.y, 'z:', inRegionCoords.z)
+    const coordIndex = coordinateToIndexXZY(inRegionCoords.x, inRegionCoords.z, inRegionCoords.y)
+
+    // set a block for the test
+    blockIds[coordIndex] = instrumentId
+  }
 
   const blockEntities: BlockEntity[] = []
 
@@ -446,7 +467,7 @@ export async function parseInstrumentStreams(
     Length: new Int16(depth),
 
     // simple offset
-    Offset: new Int32Array([1, 0, 0]),
+    Offset: new Int32Array([-Math.floor(width / 2), 0, -Math.floor(depth / 2)]),
 
     // the actual data
     Blocks: {
