@@ -2,6 +2,11 @@
 
 requires [Node.js **v23**](https://nodejs.org/en/blog/release/), which has required experimental TypeScript support.
 
+verify you have at least v23 by running
+```sh
+node --version
+```
+
 ## run
 
 run with

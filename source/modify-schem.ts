@@ -1,9 +1,16 @@
-import { Int16, Int32, Int8, read, write } from 'nbtify'
+import { Int16, Int32, Int8, NBTData, write } from 'nbtify'
 import { readFileSync } from 'node:fs'
 import type { InstrumentId, NoteId } from './parse-nbs'
 import type { GrayCodeStream } from './process-binary-stream'
 
+export { findInstrumentPosition, getLocalCoordinates, instrumentBlockIds }
+
+const WALL_DISTANCE = 5 // <-- debug //130 // distance from the center to the disc reader wall
+const VERTICAL_SPACING = 11 // blocks between each row of chests
+const GLOBAL_Y_OFFSET = 0 // global y offset for all blocks, for tweaking everything all at once :)
+
 type Direction = 'north' | 'south' | 'east' | 'west'
+type Section = 'top' | 'middle' | 'bottom' | 'percussion-left' | 'percussion-right'
 
 interface Schem {
   Schematic: WorldEditSchematic
@@ -124,7 +131,44 @@ const instrumentBlockIds = [
   'minecraft:hay_block', // banjo
   'minecraft:glowstone', // pling
 ] as const
+// type InstrumentName = typeof instrumentBlockIds[number] maybe not right now
 
+// Create reverse lookup from block name to instrument ID
+const blockNameToInstrumentId = Object.fromEntries(
+  instrumentBlockIds.map((blockName, index) => [blockName, index]),
+) as Record<string, InstrumentId>
+
+// Mapping: Direction + Section → Instrument ID
+const directionSectionToInstrument: Record<Direction, Record<Section, InstrumentId>> = {
+  north: {
+    top: blockNameToInstrumentId['minecraft:glowstone'],
+    middle: blockNameToInstrumentId['minecraft:gold_block'],
+    bottom: blockNameToInstrumentId['minecraft:packed_ice'],
+    'percussion-left': blockNameToInstrumentId['minecraft:stone'],
+    'percussion-right': blockNameToInstrumentId['minecraft:soul_sand'],
+  },
+  south: {
+    top: blockNameToInstrumentId['minecraft:clay'],
+    middle: blockNameToInstrumentId['minecraft:iron_block'],
+    bottom: blockNameToInstrumentId['minecraft:bone_block'],
+    'percussion-left': blockNameToInstrumentId['minecraft:sand'],
+    'percussion-right': blockNameToInstrumentId['minecraft:glass'],
+  },
+  east: {
+    top: blockNameToInstrumentId['minecraft:emerald_block'],
+    middle: blockNameToInstrumentId['minecraft:pumpkin'],
+    bottom: blockNameToInstrumentId['minecraft:hay_block'],
+    'percussion-left': blockNameToInstrumentId['minecraft:soul_sand'],
+    'percussion-right': blockNameToInstrumentId['minecraft:glass'],
+  },
+  west: {
+    top: blockNameToInstrumentId['minecraft:white_wool'],
+    middle: blockNameToInstrumentId['minecraft:oak_planks'],
+    bottom: blockNameToInstrumentId['minecraft:dirt'],
+    'percussion-left': blockNameToInstrumentId['minecraft:stone'],
+    'percussion-right': blockNameToInstrumentId['minecraft:sand'],
+  },
+} as const
 
 const customPaletteBlockIds = {
   chestNorthLeft: 100,
@@ -135,10 +179,43 @@ const customPaletteBlockIds = {
   chestEastRight: 105,
   chestWestLeft: 106,
   chestWestRight: 107,
-  
-  noteNotUsedBlockId: 108, // note does not exist at all
-  singleStreamMissingBlockId: 109, // missing one of the two double chests
+
+  air: 110,
+  noteNotUsedBlockId: 111, // note does not exist at all
+  singleStreamMissingBlockId: 112, // missing one of the two double chests
 } as const
+
+const discReaderLayout: string[][] = (() => {
+  const csvContent = readFileSync('./resource/disc-reader-layout.csv', 'utf-8')
+  const layout = csvContent
+    .trim()
+    .split('\n')
+    .map(line => line.split(','))
+
+  const validPattern = /^[A-E]([0-1]\d|2[0-4])$/
+  const seenEntries = new Set<string>()
+
+  for (let y = 0; y < layout.length; y++) {
+    for (let x = 0; x < layout[y].length; x++) {
+      const entry = layout[y][x]
+
+      if (entry === '') {
+        continue
+      }
+
+      if (!validPattern.test(entry)) {
+        throw `invalid CSV entry at position (${x}, ${y}): "${entry}". Must match pattern [A-E][00-24] or be empty.`
+      }
+
+      if (seenEntries.has(entry)) {
+        throw `duplicate CSV entry found: "${entry}" at position (${x}, ${y})`
+      }
+      seenEntries.add(entry)
+    }
+  }
+
+  return layout
+})()
 
 function getChestPaletteId(side: 'left' | 'right', direction: Direction): number {
   if (direction === 'north') {
@@ -153,8 +230,94 @@ function getChestPaletteId(side: 'left' | 'right', direction: Direction): number
   if (direction === 'west') {
     return side === 'left' ? customPaletteBlockIds.chestWestLeft : customPaletteBlockIds.chestWestRight
   }
-  
+
   throw new Error(`Invalid direction: ${direction}`)
+}
+
+// Helper function: Step 1 - Find direction and section for an instrument
+function findInstrumentPosition(instrumentId: InstrumentId): { direction: Direction; section: Section } | undefined {
+  for (const [direction, sections] of Object.entries(directionSectionToInstrument) as [
+    Direction,
+    Record<Section, InstrumentId>,
+  ][]) {
+    for (const [section, mappedInstrumentId] of Object.entries(sections) as [Section, InstrumentId][]) {
+      if (mappedInstrumentId === instrumentId) {
+        return { direction, section }
+      }
+    }
+  }
+  return undefined
+}
+
+// Helper function: Step 2 - Get local coordinates from CSV layout
+function getLocalCoordinates(
+  instrumentId: InstrumentId,
+  noteId: NoteId,
+): { x: number; y: number; direction: Direction } | undefined {
+  const position = findInstrumentPosition(instrumentId)
+  if (!position) {
+    return undefined
+  }
+
+  const sectionToLetter: Record<Section, string> = {
+    top: 'A',
+    middle: 'B',
+    bottom: 'C',
+    'percussion-left': 'E',
+    'percussion-right': 'D',
+  }
+
+  const letter = sectionToLetter[position.section]
+  const noteIndex = noteId.toString().padStart(2, '0')
+  const targetPattern = `${letter}${noteIndex}`
+
+  for (let y = 0; y < discReaderLayout.length; y++) {
+    for (let x = 0; x < discReaderLayout[y].length; x++) {
+      if (discReaderLayout[y][x] === targetPattern) {
+        return { x, y, direction: position.direction }
+      }
+    }
+  }
+
+  return undefined
+}
+
+// Helper function: Step 3 - Convert local coordinates to world coordinates (coordinates within the schematic region)
+function getWorldCoordinates(
+  direction: Direction,
+  localX: number,
+  localY: number,
+): { x: number; y: number; z: number } {
+  const d = WALL_DISTANCE
+  const directionOffsets = {
+    north: { x: 0, z: -d },
+    south: { x: 0, z: d },
+    east: { x: d, z: 0 },
+    west: { x: -d, z: 0 },
+  }
+
+  const offset = directionOffsets[direction]
+
+  return {
+    x: offset.x + localX,
+    y: GLOBAL_Y_OFFSET + localY * (1 + VERTICAL_SPACING),
+    z: offset.z,
+  }
+}
+
+// Helper function: Combined - Get chest position from instrument and note
+function getChestPosition(instrumentId: InstrumentId, noteId: NoteId): { x: number; y: number; z: number } | undefined {
+  const localCoords = getLocalCoordinates(instrumentId, noteId)
+  if (!localCoords) {
+    return undefined
+  }
+
+  const position = findInstrumentPosition(instrumentId)
+  if (!position) {
+    return undefined
+  }
+
+  return getWorldCoordinates(position.direction, localCoords.x, localCoords.y)
 }
 
 export async function parseInstrumentStreams(
@@ -165,13 +328,11 @@ export async function parseInstrumentStreams(
     .sort((a, b) => a - b)
 
   console.log(instrumentIdsOrdered)
+  // ×
 
-  // 25 instruments × 2 lanes per instrument × 2 chests (double chest) per lane + 1 instrument display block
-  const width = 25 * 2 * 2 + 1
-  // 1 row of double chests × instruments
-  const height = instrumentIdsOrdered.length
-  // (only single row for now)
-  const depth = 1
+  const width = WALL_DISTANCE * 2 + 1
+  const depth = width
+  const height = discReaderLayout.length
 
   const coordinateToIndexXZY = createAccessIndexFunctionXZY(width, depth, height)
 
@@ -194,33 +355,37 @@ export async function parseInstrumentStreams(
   }
 
   // Add all directional chest variants
-  palette['minecraft:chest[facing=north,type=left,waterlogged=false]'] = new Int32(customPaletteBlockIds.chestNorthLeft)
-  palette['minecraft:chest[facing=north,type=right,waterlogged=false]'] = new Int32(customPaletteBlockIds.chestNorthRight)
-  palette['minecraft:chest[facing=south,type=left,waterlogged=false]'] = new Int32(customPaletteBlockIds.chestSouthLeft)
-  palette['minecraft:chest[facing=south,type=right,waterlogged=false]'] = new Int32(customPaletteBlockIds.chestSouthRight)
-  palette['minecraft:chest[facing=east,type=left,waterlogged=false]'] = new Int32(customPaletteBlockIds.chestEastLeft)
-  palette['minecraft:chest[facing=east,type=right,waterlogged=false]'] = new Int32(customPaletteBlockIds.chestEastRight)
-  palette['minecraft:chest[facing=west,type=left,waterlogged=false]'] = new Int32(customPaletteBlockIds.chestWestLeft)
-  palette['minecraft:chest[facing=west,type=right,waterlogged=false]'] = new Int32(customPaletteBlockIds.chestWestRight)
-  
+  palette['minecraft:chest[facing=north,type=left]'] = new Int32(customPaletteBlockIds.chestNorthLeft)
+  palette['minecraft:chest[facing=north,type=right]'] = new Int32(customPaletteBlockIds.chestNorthRight)
+  palette['minecraft:chest[facing=south,type=left]'] = new Int32(customPaletteBlockIds.chestSouthLeft)
+  palette['minecraft:chest[facing=south,type=right]'] = new Int32(customPaletteBlockIds.chestSouthRight)
+  palette['minecraft:chest[facing=east,type=left]'] = new Int32(customPaletteBlockIds.chestEastLeft)
+  palette['minecraft:chest[facing=east,type=right]'] = new Int32(customPaletteBlockIds.chestEastRight)
+  palette['minecraft:chest[facing=west,type=left]'] = new Int32(customPaletteBlockIds.chestWestLeft)
+  palette['minecraft:chest[facing=west,type=right]'] = new Int32(customPaletteBlockIds.chestWestRight)
+
   // Utility blocks
-  palette['minecraft:blackstone_stairs[facing=south,half=top,shape=straight,waterlogged=false]'] = new Int32(
+  palette['minecraft:air'] = new Int32(customPaletteBlockIds.air)
+  palette['minecraft:blackstone_stairs[facing=south,half=top,shape=straight]'] = new Int32(
     customPaletteBlockIds.noteNotUsedBlockId,
   )
-  palette['minecraft:quartz_stairs[facing=south,half=top,shape=straight,waterlogged=false]'] = new Int32(
+  palette['minecraft:quartz_stairs[facing=south,half=top,shape=straight]'] = new Int32(
     customPaletteBlockIds.singleStreamMissingBlockId,
   )
 
-  const blockIds: number[] = new Array(width * height * depth).fill(customPaletteBlockIds.noteNotUsedBlockId)
+  const blockIds: number[] = new Array(width * height * depth).fill(customPaletteBlockIds.air)
+  /*
   for (let i = 0; i < height; i++) {
     const blockIndex = coordinateToIndexXZY(0, 0, i)
     const instrumentId = instrumentIdsOrdered[i]
 
     blockIds[blockIndex] = instrumentId
   }
+  */
 
   const blockEntities: BlockEntity[] = []
 
+  /* FIXME: do chests later
   for (const [instrumentIdAsString, notes] of Object.entries(input)) {
     for (const [noteIdAsString, [stream1, stream2]] of Object.entries(notes)) {
       const instrumentId: InstrumentId = Number(instrumentIdAsString)
@@ -269,6 +434,7 @@ export async function parseInstrumentStreams(
       createDoubleChestsInGlobalData(startX + 2, y, stream2)
     }
   }
+  */
 
   const data: WorldEditSchematic = {
     // worldedit defaults
@@ -290,9 +456,7 @@ export async function parseInstrumentStreams(
     },
   }
 
-  const schem = await read(readFileSync('./resource/base.schem'))
-  ;(schem.data as any).Schematic = data
-
+  const schem: NBTData<Schem> = new NBTData({ Schematic: data }, { compression: 'gzip', endian: 'big' })
   return await write(schem)
 }
 

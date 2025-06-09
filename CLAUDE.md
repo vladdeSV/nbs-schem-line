@@ -59,3 +59,9 @@ The project uses Biome for formatting and linting:
 3. **Schematic Generation** (`source/modify-schem.ts`): Creates WorldEdit schematic with chest-based storage system for the timing data
 
 The conversion pipeline transforms musical timing (NBS ticks) into Minecraft game ticks (20/second), encoding the data into physical chest arrangements that drive the redstone music machine.
+
+## Development Guidelines
+
+- Use short and concise tone when writing log messages, throwing, and comments
+- Use lowercase, unless uppercase is needed
+- Example of a good log message: "too many notes; cannot have more than 27 × 27 item slots for a single note & instrument"
