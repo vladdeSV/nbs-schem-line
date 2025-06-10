@@ -5,7 +5,7 @@ import type { GrayCodeStream } from './process-binary-stream'
 
 export { findInstrumentPositions, getLocalCoordinates, instrumentBlockIds }
 
-const WALL_DISTANCE = 14 // <-- debug //130 // distance from the center to the disc reader wall
+const WALL_DISTANCE = 14 * 4 // <-- debug //130 // distance from the center to the disc reader wall
 const VERTICAL_SPACING = 11 // blocks between each row of chests
 const GLOBAL_Y_OFFSET = 0 // global y offset for all blocks, for tweaking everything all at once :)
 
@@ -186,7 +186,7 @@ const customPaletteBlockIds = {
 } as const
 
 const discReaderLayout: string[][] = (() => {
-  const csvContent = readFileSync('./resource/disc-reader-layout.13x8.csv', 'utf-8')
+  const csvContent = readFileSync('./resource/layouts/13x8.csv', 'utf-8')
   const layout = csvContent
     .trim()
     .split('\n')
@@ -216,6 +216,15 @@ const discReaderLayout: string[][] = (() => {
 
   return layout
 })()
+
+// developer notice: do not include any trailing commas in the layout
+const discReaderLayoutMaxWidth = discReaderLayout.reduce((max, arr) => {
+  if (arr.length > max) {
+    return arr.length
+  }
+
+  return max
+}, 0)
 
 function getChestPaletteId(side: 'left' | 'right', direction: Direction): number {
   if (direction === 'north') {
@@ -303,19 +312,19 @@ function getInRegionCoordinates(
   localX: number,
   localY: number,
 ): { x: number; y: number; z: number } {
-  const invertedY = discReaderLayout.length - 1 - localY
-  const quarterWallDistance = Math.floor(WALL_DISTANCE / 4)
+  const adjustedX = localX * 4 + (WALL_DISTANCE - 4 * Math.floor(discReaderLayoutMaxWidth / 2)) - 2
+  const invertedY = (discReaderLayout.length - 1 - localY) * 11
   const fullWidth = WALL_DISTANCE * 2
 
   switch (direction) {
     case 'south':
-      return { x: WALL_DISTANCE * 2 - quarterWallDistance - localX, y: invertedY, z: fullWidth }
+      return { x: WALL_DISTANCE * 2 - adjustedX, y: invertedY, z: fullWidth }
     case 'west':
-      return { x: 0, y: invertedY, z: WALL_DISTANCE * 2 - quarterWallDistance - localX }
+      return { x: 0, y: invertedY, z: WALL_DISTANCE * 2 - adjustedX }
     case 'north':
-      return { x: localX + quarterWallDistance, y: invertedY, z: 0 }
+      return { x: adjustedX, y: invertedY, z: 0 }
     case 'east':
-      return { x: fullWidth, y: invertedY, z: localX + quarterWallDistance }
+      return { x: fullWidth, y: invertedY, z: adjustedX }
   }
 }
 
@@ -348,7 +357,7 @@ export async function parseInstrumentStreams(
 
   const width = WALL_DISTANCE * 2 + 1
   const depth = width
-  const height = discReaderLayout.length
+  const height = discReaderLayout.length * 10 + 1
 
   const coordinateToIndexXZY = createAccessIndexFunctionXZY(width, depth, height)
 
