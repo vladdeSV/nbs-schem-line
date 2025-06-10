@@ -35,7 +35,6 @@ then move the output file into the WorldEdit schematics folder
 ### configurable variables (and other things)
 there are some custom variables that can be tweaked, but they are variables in code. they are found in [`source/schematic/constants.ts`](source/schematic/constants.ts#L5-L7).
 
-#### variables
 - `WALL_DISTANCE` distance in blocks from center to each directional wall. should be >128 for full-scale builds, but currently a low value for debugging
 - `VERTICAL_SPACING` amount of spacing between each vertical row of chests
 - `GLOBAL_Y_OFFSET` global y-coordinate offset for all blocks, useful for adjusting entire schematic y-position
@@ -46,3 +45,5 @@ the code currently reads the [`resource/layouts/xolix.csv`](resource/layouts/xol
 the layout uses a format like this: every "wall" has 5 associated instruments: three main instruments, and two "halves" of percussion instruments; every instrument has 25 different available notes, 0-24.
 
 an instrument+note position is noted like this: `A05`, `C12`, `D24`. the letters `A`, `B`, and `C` are used for the main instruments, and `D` and `E` are used for the percussions. the code expects 25 of `A`, `B`, and `C` each, but only that `D`+`E` add up to 25. in total, 100 entries per layout. 
+
+to change what instrument is supposed to be in what direciton, please modify the variable `directionSectionToInstrument` in [`source/schematic/constants.ts`](source/schematic/constants.ts#L71)
