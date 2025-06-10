@@ -186,7 +186,7 @@ const customPaletteBlockIds = {
 } as const
 
 const discReaderLayout: string[][] = (() => {
-  const csvContent = readFileSync('./resource/layouts/13x8.csv', 'utf-8')
+  const csvContent = readFileSync('./resource/layouts/xolix.csv', 'utf-8')
   const layout = csvContent
     .trim()
     .split('\n')
@@ -312,7 +312,7 @@ function getInRegionCoordinates(
   localX: number,
   localY: number,
 ): { x: number; y: number; z: number } {
-  const adjustedX = localX * 4 + (WALL_DISTANCE - 4 * Math.floor(discReaderLayoutMaxWidth / 2)) - 2
+  const adjustedX = localX * 4 + (WALL_DISTANCE - 4 * Math.floor(discReaderLayoutMaxWidth / 2))
   const invertedY = (discReaderLayout.length - 1 - localY) * 11
   const fullWidth = WALL_DISTANCE * 2
 
@@ -388,18 +388,33 @@ export async function parseInstrumentStreams(
 
   const blockIds: number[] = new Array(width * height * depth).fill(customPaletteBlockIds.air)
 
-  // section: debug test
-
-  const debugNoteValues: [(typeof instrumentBlockIds)[number], NoteId][] = []
-  for (const instrumentName of instrumentBlockIds) {
-    for (let noteId = 0; noteId < 25; noteId++) {
-      debugNoteValues.push([instrumentName, noteId])
+  // section: fill in with empty notes
+  function coordinateOffset(
+    coord: { x: number; y: number; z: number },
+    offset: number,
+    direction: Direction,
+  ): { x: number; y: number; z: number } {
+    switch (direction) {
+      case 'south':
+        return { x: coord.x - offset, y: coord.y, z: coord.z }
+      case 'north':
+        return { x: coord.x + offset, y: coord.y, z: coord.z }
+      case 'east':
+        return { x: coord.x, y: coord.y, z: coord.z + offset }
+      case 'west':
+        return { x: coord.x, y: coord.y, z: coord.z - offset }
     }
   }
 
-  for (const [blockName, noteId] of debugNoteValues) {
-    const instrumentId: InstrumentId = instrumentBlockIds.indexOf(blockName)
+  const allPossibleNoteValues: [(typeof instrumentBlockIds)[number], NoteId][] = []
+  for (const instrumentName of instrumentBlockIds) {
+    for (let noteId = 0; noteId < 25; noteId++) {
+      allPossibleNoteValues.push([instrumentName, noteId])
+    }
+  }
 
+  for (const [blockName, noteId] of allPossibleNoteValues) {
+    const instrumentId: InstrumentId = instrumentBlockIds.indexOf(blockName)
     const localCoords = getLocalCoordinates(instrumentId, noteId)
     if (!localCoords) {
       throw `whaa, ${instrumentBlockIds[instrumentId]} with note ${noteId} not found in layout`
@@ -407,10 +422,13 @@ export async function parseInstrumentStreams(
 
     const inRegionCoords = getInRegionCoordinates(localCoords.direction, localCoords.x, localCoords.y)
     console.debug(blockName, noteId, 'x:', inRegionCoords.x, 'y:', inRegionCoords.y, 'z:', inRegionCoords.z)
-    const coordIndex = coordinateToIndexXZY(inRegionCoords.x, inRegionCoords.z, inRegionCoords.y)
 
-    // set a block for the test
-    blockIds[coordIndex] = instrumentId
+    for (let i = 0; i < 4; ++i) {
+      const oc = coordinateOffset(inRegionCoords, i, localCoords.direction)
+      //console.log(`offsetting (${inRegionCoords.x},${inRegionCoords.y},${inRegionCoords.z}) -> (${oc.x},${oc.y},${oc.z})`)
+      const coordIndex = coordinateToIndexXZY(oc.x, oc.z, oc.y)
+      blockIds[coordIndex] = customPaletteBlockIds.noteNotUsedBlockId
+    }
   }
 
   const blockEntities: BlockEntity[] = []
