@@ -227,16 +227,16 @@ const discReaderLayoutMaxWidth = discReaderLayout.reduce((max, arr) => {
 }, 0)
 
 function getChestPaletteId(side: 'left' | 'right', direction: Direction): number {
-  if (direction === 'north') {
+  if (direction === 'south') {
     return side === 'left' ? customPaletteBlockIds.chestNorthLeft : customPaletteBlockIds.chestNorthRight
   }
-  if (direction === 'south') {
+  if (direction === 'north') {
     return side === 'left' ? customPaletteBlockIds.chestSouthLeft : customPaletteBlockIds.chestSouthRight
   }
-  if (direction === 'east') {
+  if (direction === 'west') {
     return side === 'left' ? customPaletteBlockIds.chestEastLeft : customPaletteBlockIds.chestEastRight
   }
-  if (direction === 'west') {
+  if (direction === 'east') {
     return side === 'left' ? customPaletteBlockIds.chestWestLeft : customPaletteBlockIds.chestWestRight
   }
 
@@ -433,22 +433,37 @@ export async function parseInstrumentStreams(
 
   const blockEntities: BlockEntity[] = []
 
-  /* FIXME: do chests later
   for (const [instrumentIdAsString, notes] of Object.entries(input)) {
     for (const [noteIdAsString, [stream1, stream2]] of Object.entries(notes)) {
       const instrumentId: InstrumentId = Number(instrumentIdAsString)
       const noteId: NoteId = Number(noteIdAsString)
 
-      function createDoubleChestsInGlobalData(startX: number, y: number, stream: GrayCodeStream) {
-        const doubleChestStartIndex = coordinateToIndexXZY(startX, 0, y)
+      function createDoubleChestsInGlobalData(
+        baseCoord: { x: number; y: number; z: number },
+        direction: Direction,
+        stream: GrayCodeStream,
+      ) {
         if (!stream.every(v => v === 0)) {
-          blockIds[doubleChestStartIndex] = getChestPaletteId('right', 'south')
-          blockIds[doubleChestStartIndex + 1] = getChestPaletteId('left', 'south')
+          // Calculate positions for both chests using coordinateOffset
+          const rightChestCoord = baseCoord
+          const leftChestCoord = coordinateOffset(baseCoord, 1, direction)
 
-          function createBlockEntityFromData(x: number, y: number, contents: BlockEntityData[]): BlockEntity {
+          // Get appropriate chest palette IDs for the direction
+          const rightChestIndex = coordinateToIndexXZY(rightChestCoord.x, rightChestCoord.z, rightChestCoord.y)
+          const leftChestIndex = coordinateToIndexXZY(leftChestCoord.x, leftChestCoord.z, leftChestCoord.y)
+
+          blockIds[rightChestIndex] = getChestPaletteId('right', direction)
+          blockIds[leftChestIndex] = getChestPaletteId('left', direction)
+
+          function createBlockEntityFromData(
+            x: number,
+            y: number,
+            z: number,
+            contents: BlockEntityData[],
+          ): BlockEntity {
             return {
               Id: 'minecraft:chest',
-              Pos: new Int32Array([x, y, 0]),
+              Pos: new Int32Array([x, y, z]),
               Data: {
                 id: 'minecraft:chest',
                 Items: contents,
@@ -460,29 +475,49 @@ export async function parseInstrumentStreams(
           const [contentsLeft, contentsRight] = streamToDoubleChestContents(stream)
 
           if (contentsLeft.length) {
-            const blockEntity = createBlockEntityFromData(startX, y, contentsLeft)
+            const blockEntity = createBlockEntityFromData(
+              rightChestCoord.x,
+              rightChestCoord.y,
+              rightChestCoord.z,
+              contentsLeft,
+            )
             blockEntities.push(blockEntity)
           }
 
           if (contentsRight?.length) {
-            const blockEntity = createBlockEntityFromData(startX + 1, y, contentsRight)
+            const blockEntity = createBlockEntityFromData(
+              leftChestCoord.x,
+              leftChestCoord.y,
+              leftChestCoord.z,
+              contentsRight,
+            )
             blockEntities.push(blockEntity)
           }
         } else {
-          blockIds[doubleChestStartIndex] = customPaletteBlockIds.singleStreamMissingBlockId
-          blockIds[doubleChestStartIndex + 1] = customPaletteBlockIds.singleStreamMissingBlockId
+          // Handle empty streams with placeholder blocks
+          const rightChestCoord = baseCoord
+          const leftChestCoord = coordinateOffset(baseCoord, 1, direction)
+
+          const rightChestIndex = coordinateToIndexXZY(rightChestCoord.x, rightChestCoord.z, rightChestCoord.y)
+          const leftChestIndex = coordinateToIndexXZY(leftChestCoord.x, leftChestCoord.z, leftChestCoord.y)
+
+          blockIds[rightChestIndex] = customPaletteBlockIds.singleStreamMissingBlockId
+          blockIds[leftChestIndex] = customPaletteBlockIds.singleStreamMissingBlockId
         }
       }
 
-      // set chest block ids in data array
-      const y = heightFromInstrument(instrumentId)
-      const startX = 1 + noteId * 4
+      // Get the base coordinates for this instrument/note combination
+      const localCoords = getLocalCoordinates(instrumentId, noteId)
+      const baseCoords = getInRegionCoordinates(localCoords.direction, localCoords.x, localCoords.y)
 
-      createDoubleChestsInGlobalData(startX, y, stream1)
-      createDoubleChestsInGlobalData(startX + 2, y, stream2)
+      // Create the two double chests (stream1 and stream2)
+      const stream1Coords = coordinateOffset(baseCoords, 0, localCoords.direction) // First double chest
+      const stream2Coords = coordinateOffset(baseCoords, 2, localCoords.direction) // Second double chest
+
+      createDoubleChestsInGlobalData(stream1Coords, localCoords.direction, stream1)
+      createDoubleChestsInGlobalData(stream2Coords, localCoords.direction, stream2)
     }
   }
-  */
 
   const data: WorldEditSchematic = {
     // worldedit defaults
