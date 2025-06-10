@@ -46,6 +46,7 @@ The project uses Biome for formatting and linting:
 - Line width: 120 characters
 - Indent: spaces
 - Block statements required
+- Ensure project looks good by linting, run `biome check`
 
 ## Requirements
 
@@ -65,3 +66,7 @@ The conversion pipeline transforms musical timing (NBS ticks) into Minecraft gam
 - Use short and concise tone when writing log messages, throwing, and comments
 - Use lowercase, unless uppercase is needed
 - Example of a good log message: "too many notes; cannot have more than 27 × 27 item slots for a single note & instrument"
+
+## Test Commands
+
+- To ensure the code works, run `node --no-warnings --trace-uncaught index.ts 'megalovania.nbs' .ai-test.schem`

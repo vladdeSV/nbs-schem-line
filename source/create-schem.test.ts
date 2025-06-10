@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { findInstrumentPositions, instrumentBlockIds } from './modify-schem'
+import { findInstrumentPositions, instrumentBlockIds } from './create-schem'
 
 function getInstrumentId(name: (typeof instrumentBlockIds)[number]): number {
   return instrumentBlockIds.indexOf(name)

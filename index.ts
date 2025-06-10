@@ -1,5 +1,5 @@
 import { writeFileSync } from 'node:fs'
-import { parseInstrumentStreams } from './source/modify-schem.ts'
+import { parseInstrumentStreams } from './source/create-schem.ts'
 import { parseNBSFile } from './source/parse-nbs.ts'
 import { processBinaryStreams } from './source/process-binary-stream.ts'
 

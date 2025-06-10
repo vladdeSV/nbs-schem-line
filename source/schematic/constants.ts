@@ -1,0 +1,131 @@
+import type { InstrumentId } from '../parse-nbs'
+import type { Direction, Section } from './types.ts'
+
+export const WALL_DISTANCE = 14 * 4 // <-- debug //130 // distance from the center to the disc reader wall
+export const VERTICAL_SPACING = 11 // blocks between each row of chests
+export const GLOBAL_Y_OFFSET = 0 // global y offset for all blocks, for tweaking everything all at once :)
+
+export const grayCodeToDiscName = {
+  1: 'minecraft:music_disc_13',
+  2: 'minecraft:music_disc_cat',
+  3: 'minecraft:music_disc_blocks',
+  4: 'minecraft:music_disc_chirp',
+  5: 'minecraft:music_disc_far',
+  6: 'minecraft:music_disc_mall',
+  7: 'minecraft:music_disc_mellohi',
+  8: 'minecraft:music_disc_stal',
+  9: 'minecraft:music_disc_strad',
+  10: 'minecraft:music_disc_ward',
+  11: 'minecraft:music_disc_11',
+  12: 'minecraft:music_disc_wait',
+  13: 'minecraft:music_disc_precipice',
+  14: 'minecraft:music_disc_otherside',
+  15: 'minecraft:music_disc_5',
+} as const
+
+export const woolBlockIds = [
+  'minecraft:white_wool',
+  'minecraft:orange_wool',
+  'minecraft:magenta_wool',
+  'minecraft:light_blue_wool',
+  'minecraft:yellow_wool',
+  'minecraft:lime_wool',
+  'minecraft:pink_wool',
+  'minecraft:gray_wool',
+  'minecraft:light_gray_wool',
+  'minecraft:cyan_wool',
+  'minecraft:purple_wool',
+  'minecraft:blue_wool',
+  'minecraft:brown_wool',
+  'minecraft:green_wool',
+  'minecraft:red_wool',
+  'minecraft:black_wool',
+] as const
+
+export const instrumentBlockIds = [
+  'minecraft:dirt', // piano
+  'minecraft:oak_planks', // double bass
+  'minecraft:stone', // bass drum
+  'minecraft:sand', // snare drum
+  'minecraft:glass', // click
+  'minecraft:white_wool', // guitar
+  'minecraft:clay', // flute
+  'minecraft:gold_block', // bell
+  'minecraft:packed_ice', // chime
+  'minecraft:bone_block', // xylophone
+  'minecraft:iron_block', // iron xylophone
+  'minecraft:soul_sand', // cow bell
+  'minecraft:pumpkin', // didgeridoo
+  'minecraft:emerald_block', // bit
+  'minecraft:hay_block', // banjo
+  'minecraft:glowstone', // pling
+] as const
+
+export type InstrumentName = (typeof instrumentBlockIds)[number]
+
+const blockNameToInstrumentId = Object.fromEntries(
+  instrumentBlockIds.map((blockName, index) => [blockName, index]),
+) as Record<string, InstrumentId>
+
+export const directionSectionToInstrument: Record<Direction, Record<Section, InstrumentId>> = {
+  north: {
+    top: blockNameToInstrumentId['minecraft:glowstone'],
+    middle: blockNameToInstrumentId['minecraft:gold_block'],
+    bottom: blockNameToInstrumentId['minecraft:packed_ice'],
+    'percussion-left': blockNameToInstrumentId['minecraft:stone'],
+    'percussion-right': blockNameToInstrumentId['minecraft:soul_sand'],
+  },
+  south: {
+    top: blockNameToInstrumentId['minecraft:clay'],
+    middle: blockNameToInstrumentId['minecraft:iron_block'],
+    bottom: blockNameToInstrumentId['minecraft:bone_block'],
+    'percussion-left': blockNameToInstrumentId['minecraft:glass'],
+    'percussion-right': blockNameToInstrumentId['minecraft:sand'],
+  },
+  east: {
+    top: blockNameToInstrumentId['minecraft:emerald_block'],
+    middle: blockNameToInstrumentId['minecraft:pumpkin'],
+    bottom: blockNameToInstrumentId['minecraft:hay_block'],
+    'percussion-left': blockNameToInstrumentId['minecraft:soul_sand'],
+    'percussion-right': blockNameToInstrumentId['minecraft:glass'],
+  },
+  west: {
+    top: blockNameToInstrumentId['minecraft:white_wool'],
+    middle: blockNameToInstrumentId['minecraft:oak_planks'],
+    bottom: blockNameToInstrumentId['minecraft:dirt'],
+    'percussion-left': blockNameToInstrumentId['minecraft:sand'],
+    'percussion-right': blockNameToInstrumentId['minecraft:stone'],
+  },
+} as const
+
+export const customPaletteBlockIds = {
+  chestNorthLeft: 100,
+  chestNorthRight: 101,
+  chestSouthLeft: 102,
+  chestSouthRight: 103,
+  chestEastLeft: 104,
+  chestEastRight: 105,
+  chestWestLeft: 106,
+  chestWestRight: 107,
+
+  air: 110,
+  noteNotUsedBlockId: 111, // note does not exist at all
+  singleStreamMissingBlockId: 112, // missing one of the two double chests
+} as const
+
+export function getChestPaletteId(side: 'left' | 'right', direction: Direction): number {
+  if (direction === 'south') {
+    return side === 'left' ? customPaletteBlockIds.chestNorthLeft : customPaletteBlockIds.chestNorthRight
+  }
+  if (direction === 'north') {
+    return side === 'left' ? customPaletteBlockIds.chestSouthLeft : customPaletteBlockIds.chestSouthRight
+  }
+  if (direction === 'west') {
+    return side === 'left' ? customPaletteBlockIds.chestEastLeft : customPaletteBlockIds.chestEastRight
+  }
+  if (direction === 'east') {
+    return side === 'left' ? customPaletteBlockIds.chestWestLeft : customPaletteBlockIds.chestWestRight
+  }
+
+  throw `invalid direction: ${direction}`
+}
