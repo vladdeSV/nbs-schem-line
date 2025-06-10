@@ -1,3 +1,4 @@
+the music note values are placed in this order
 ## top section
 ```
    24 21 18 22 23 

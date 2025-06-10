@@ -1,7 +1,8 @@
 import type { InstrumentId } from '../parse-nbs'
 import type { Direction, Section } from './types.ts'
 
-export const WALL_DISTANCE = 14 * 4 // <-- debug //130 // distance from the center to the disc reader wall
+// vladde: the wall distance should be >128, but i put it at a low number for debugging purposes
+export const WALL_DISTANCE = 56 // distance from the center to the disc reader wall
 export const VERTICAL_SPACING = 11 // blocks between each row of chests
 export const GLOBAL_Y_OFFSET = 0 // global y offset for all blocks, for tweaking everything all at once :)
 

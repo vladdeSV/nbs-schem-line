@@ -29,6 +29,39 @@ export const discReaderLayout: string[][] = (() => {
     }
   }
 
+  // validate that all required entries are present
+  const requiredSections = ['A', 'B', 'C'] // top, middle, bottom (full instruments)
+  const percussionSections = ['D', 'E'] // percussion sections (halves)
+  
+  // check A00-A24, B00-B24, C00-C24 (3 full instruments × 25 notes = 75 entries each)
+  for (const section of requiredSections) {
+    for (let note = 0; note <= 24; note++) {
+      const noteStr = note.toString().padStart(2, '0')
+      const entry = `${section}${noteStr}`
+      if (!seenEntries.has(entry)) {
+        throw `missing required entry: "${entry}"`
+      }
+    }
+  }
+
+  // count percussion entries (D and E should total 25 entries combined per side)
+  let percussionCount = 0
+  for (const entry of seenEntries) {
+    if (percussionSections.some(section => entry.startsWith(section))) {
+      percussionCount++
+    }
+  }
+
+  if (percussionCount !== 25) {
+    throw `percussion sections (D+E) must contain exactly 25 entries total, found ${percussionCount}`
+  }
+
+  // total should be 100 (3 full instruments × 25 + 1 half instrument × 25 = 75 + 25 = 100)
+  const expectedTotal = 100
+  if (seenEntries.size !== expectedTotal) {
+    throw `expected exactly ${expectedTotal} entries in layout, found ${seenEntries.size}`
+  }
+
   return layout
 })()
 

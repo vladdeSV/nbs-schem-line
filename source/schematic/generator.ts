@@ -1,7 +1,13 @@
-import { Int8, Int16, Int32, NBTData, write } from 'nbtify'
+import { Int16, Int32, NBTData, write } from 'nbtify'
 import type { InstrumentId, NoteId } from '../parse-nbs'
 import type { GrayCodeStream } from '../process-binary-stream'
-import { WALL_DISTANCE, customPaletteBlockIds, getChestPaletteId, instrumentBlockIds } from './constants.ts'
+import {
+  GLOBAL_Y_OFFSET,
+  WALL_DISTANCE,
+  customPaletteBlockIds,
+  getChestPaletteId,
+  instrumentBlockIds,
+} from './constants.ts'
 import {
   coordinateOffset,
   createAccessIndexFunctionXZY,
@@ -12,8 +18,8 @@ import { streamToDoubleChestContents } from './data-conversion.ts'
 import { discReaderLayout } from './layout.ts'
 import type { BlockEntity, BlockEntityData, BlockPalette, Schem, WorldEditSchematic } from './types.ts'
 
-export { findInstrumentPositions, getLocalCoordinates } from './coordinates.ts'
 export { instrumentBlockIds } from './constants.ts'
+export { findInstrumentPositions, getLocalCoordinates } from './coordinates.ts'
 
 export async function parseInstrumentStreams(
   input: Record<InstrumentId, Record<NoteId, [GrayCodeStream, GrayCodeStream]>>,
@@ -168,7 +174,7 @@ export async function parseInstrumentStreams(
     Height: new Int16(height),
     Length: new Int16(depth),
 
-    Offset: new Int32Array([-Math.floor(width / 2), 0, -Math.floor(depth / 2)]),
+    Offset: new Int32Array([-Math.floor(width / 2), GLOBAL_Y_OFFSET, -Math.floor(depth / 2)]),
 
     Blocks: {
       Palette: palette,
