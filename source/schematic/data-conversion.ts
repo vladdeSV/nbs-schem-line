@@ -1,4 +1,4 @@
-import { Int8, Int32 } from 'nbtify'
+import { Int32, Int8 } from 'nbtify'
 import type { GrayCodeStream } from '../process-binary-stream'
 import { grayCodeToDiscName, woolBlockIds } from './constants.ts'
 import type { BlockEntityData, ItemComponent } from './types.ts'
@@ -46,6 +46,8 @@ type ItemSlotRepresentation =
       count: number
     }
 
+/// takes a stream of gray coded numbers, and converts it into a psedudo-item slot representation
+/// if there are pauses, it ensures every pause is maximum of 64 items
 function streamToItemRepresentation(stream: GrayCodeStream): ItemSlotRepresentation[] {
   const itemSlots: ItemSlotRepresentation[] = []
 
@@ -76,6 +78,8 @@ function streamToItemRepresentation(stream: GrayCodeStream): ItemSlotRepresentat
   return itemSlots
 }
 
+/// fills a shulker box with items. the items can't be more than 27
+/// the crux of this method is ensuring that when we reach a pause, to use a different wool block for the pauses
 function createShulkerBoxContainerListFromItemRepresentations(items: ItemSlotRepresentation[]): ItemComponent[] {
   if (items.length > 27) {
     console.error('cannot process more than 27 items when converting to shulkers')
@@ -131,6 +135,7 @@ function chunkArray<T>(source: readonly T[], size: number): T[][] {
   return result
 }
 
+/// takes a stream of gray coded numbers, and converts into one (1) or two (2) lists of items – one list per chest
 export function streamToDoubleChestContents(stream: GrayCodeStream): BlockEntityData[][] {
   const itemRepresentations = streamToItemRepresentation(stream)
   if (itemRepresentations.length === 0) {
@@ -139,7 +144,7 @@ export function streamToDoubleChestContents(stream: GrayCodeStream): BlockEntity
 
   const itemsPerChest = chunkArray(itemRepresentations, 27 * 27)
   if (itemsPerChest.length > 2) {
-    throw 'too many notes; cannot have more than 27 × 27 item slots for a single note & instrument'
+    throw 'too many notes; cannot have more than 27 × 27 × 2 item slots for a single note & instrument'
   }
 
   const shulkers: BlockEntityData[][] = []
@@ -148,27 +153,26 @@ export function streamToDoubleChestContents(stream: GrayCodeStream): BlockEntity
       continue
     }
 
-    const bss = chunkArray(itemsInChest, 27)
-
+    const chunkedItems = chunkArray(itemsInChest, 27)
     const shulkerItemComponents: ItemComponent[][] = []
-    for (const shulkerContainerItems of bss) {
+    for (const shulkerContainerItems of chunkedItems) {
       const c = createShulkerBoxContainerListFromItemRepresentations(shulkerContainerItems)
       shulkerItemComponents.push(c)
     }
 
-    const something: BlockEntityData[] = []
-    for (const [index, d] of shulkerItemComponents.entries()) {
-      something.push({
+    const blockEntityDatas: BlockEntityData[] = []
+    for (const [index, components] of shulkerItemComponents.entries()) {
+      blockEntityDatas.push({
         count: new Int32(1),
         Slot: new Int8(index),
         components: {
-          'minecraft:container': d,
+          'minecraft:container': components,
         },
         id: 'minecraft:shulker_box',
       })
     }
 
-    shulkers.push(something)
+    shulkers.push(blockEntityDatas)
   }
 
   if (shulkers.length > 2) {
