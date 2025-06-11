@@ -1,9 +1,10 @@
 import type { InstrumentId, NoteId } from '../parse-nbs'
-import { WALL_DISTANCE } from './constants.ts'
-import { directionSectionToInstrument, instrumentBlockIds } from './constants.ts'
+import { WALL_DISTANCE, directionSectionToInstrument, instrumentBlockIds } from './constants.ts'
 import { discReaderLayout, discReaderLayoutMaxWidth } from './layout.ts'
 import type { Direction, Section } from './types.ts'
 
+/// when accessing a block in 3D space, how do we get its position in a 1D array?
+/// this converts (x,z,y) coordinates to what i call a "linearized index" – a single number that points to the same spot in a flattened array
 export function createAccessIndexFunctionXZY(
   w: number,
   d: number,
@@ -42,6 +43,10 @@ export function findInstrumentPositions(instrumentId: InstrumentId): { direction
   return possiblePositions
 }
 
+/// for our layout, where would our music note be on that layout; what x and y coodrinates?
+/// this is what i call "local coordinates" – if you're facing the wall, what are the x and y coords?
+/// however, there will be four identical layouts — one for each direction — and we need to know "which wall does this disc reader exist at"
+///  (this function gives "inverted" y coords)
 export function getLocalCoordinates(
   instrumentId: InstrumentId,
   noteId: NoteId,
@@ -81,20 +86,30 @@ export function getLocalCoordinates(
   process.exit(1)
 }
 
+/// converts our local coordinates in a direction into in-region world space coordinates
 export function getInRegionCoordinates(
   direction: Direction,
   localX: number,
   localY: number,
 ): { x: number; y: number; z: number } {
+  // here be dragons
+
+  // in order to "center" each wall, we figure out how many blocks should each section should be padded with
   const adjustedX = localX * 4 + (WALL_DISTANCE - 4 * Math.floor(discReaderLayoutMaxWidth / 2))
+  // also: because our region width and depth is odd-numbered, the whole thing will be techincally off-centered by 1 block
+
+  // our local y has y=0 at the top, but world space needs y=0 at the bottom (so we flip it)
+  // vladde: also, i'm not too sure, but i might have messed up the height here?
   const invertedY = (discReaderLayout.length - 1 - localY) * 11
+
+  // vladde: i think our full width is `WALL_DISTANCE * 2 + 1`, but the caluclations are off if i include the `+ 1`. weird.
   const fullWidth = WALL_DISTANCE * 2
 
   switch (direction) {
     case 'south':
-      return { x: WALL_DISTANCE * 2 - adjustedX, y: invertedY, z: fullWidth }
+      return { x: fullWidth - adjustedX, y: invertedY, z: fullWidth }
     case 'west':
-      return { x: 0, y: invertedY, z: WALL_DISTANCE * 2 - adjustedX }
+      return { x: 0, y: invertedY, z: fullWidth - adjustedX }
     case 'north':
       return { x: adjustedX, y: invertedY, z: 0 }
     case 'east':
@@ -102,6 +117,8 @@ export function getInRegionCoordinates(
   }
 }
 
+/// allows us to easily get the "next coodirnate" by an offset (used for chests)
+/// essentially takes a direction, rotates 90° clockwise, then moves in that direction
 export function coordinateOffset(
   coord: { x: number; y: number; z: number },
   offset: number,
