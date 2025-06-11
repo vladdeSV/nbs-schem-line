@@ -97,14 +97,18 @@ export async function parseInstrumentStreams(
         stream: GrayCodeStream,
       ) {
         if (!stream.every(v => v === 0)) {
-          const rightChestCoord = baseCoord
-          const leftChestCoord = coordinateOffset(baseCoord, 1, direction)
+          // physical positioning: baseCoord is the first chest, offset+1 is the second chest
+          const firstChestCoord = baseCoord
+          const secondChestCoord = coordinateOffset(baseCoord, 1, direction)
 
-          const rightChestIndex = coordinateToIndexXZY(rightChestCoord.x, rightChestCoord.z, rightChestCoord.y)
-          const leftChestIndex = coordinateToIndexXZY(leftChestCoord.x, leftChestCoord.z, leftChestCoord.y)
+          const firstChestIndex = coordinateToIndexXZY(firstChestCoord.x, firstChestCoord.z, firstChestCoord.y)
+          const secondChestIndex = coordinateToIndexXZY(secondChestCoord.x, secondChestCoord.z, secondChestCoord.y)
 
-          blockIds[rightChestIndex] = getChestPaletteId('right', direction)
-          blockIds[leftChestIndex] = getChestPaletteId('left', direction)
+          // minecraft's chest types are backwards from our coordinate system:
+          // our "first" chest (offset 0) becomes minecraft's "right" type
+          // our "second" chest (offset 1) becomes minecraft's "left" type
+          blockIds[firstChestIndex] = getChestPaletteId('right', direction)
+          blockIds[secondChestIndex] = getChestPaletteId('left', direction)
 
           function createBlockEntityFromData(
             x: number,
@@ -124,11 +128,15 @@ export async function parseInstrumentStreams(
 
           const [contentsLeft, contentsRight] = streamToDoubleChestContents(stream)
 
+          // WARNING WARNING: SPAGHETTI CODE INCOMING
+
+          // because minecraft's chest naming is backwards from our coordinates,
+          // we put the "left" contents in our "first" chest (which has minecraft type "right")
           if (contentsLeft.length) {
             const blockEntity = createBlockEntityFromData(
-              rightChestCoord.x,
-              rightChestCoord.y,
-              rightChestCoord.z,
+              firstChestCoord.x,
+              firstChestCoord.y,
+              firstChestCoord.z,
               contentsLeft,
             )
             blockEntities.push(blockEntity)
@@ -136,22 +144,22 @@ export async function parseInstrumentStreams(
 
           if (contentsRight?.length) {
             const blockEntity = createBlockEntityFromData(
-              leftChestCoord.x,
-              leftChestCoord.y,
-              leftChestCoord.z,
+              secondChestCoord.x,
+              secondChestCoord.y,
+              secondChestCoord.z,
               contentsRight,
             )
             blockEntities.push(blockEntity)
           }
         } else {
-          const rightChestCoord = baseCoord
-          const leftChestCoord = coordinateOffset(baseCoord, 1, direction)
+          const firstChestCoord = baseCoord
+          const secondChestCoord = coordinateOffset(baseCoord, 1, direction)
 
-          const rightChestIndex = coordinateToIndexXZY(rightChestCoord.x, rightChestCoord.z, rightChestCoord.y)
-          const leftChestIndex = coordinateToIndexXZY(leftChestCoord.x, leftChestCoord.z, leftChestCoord.y)
+          const firstChestIndex = coordinateToIndexXZY(firstChestCoord.x, firstChestCoord.z, firstChestCoord.y)
+          const secondChestIndex = coordinateToIndexXZY(secondChestCoord.x, secondChestCoord.z, secondChestCoord.y)
 
-          blockIds[rightChestIndex] = customPaletteBlockIds.singleStreamMissingBlockId
-          blockIds[leftChestIndex] = customPaletteBlockIds.singleStreamMissingBlockId
+          blockIds[firstChestIndex] = customPaletteBlockIds.singleStreamMissingBlockId
+          blockIds[secondChestIndex] = customPaletteBlockIds.singleStreamMissingBlockId
         }
       }
 
