@@ -1,4 +1,4 @@
-import { Int16, Int32, NBTData, write } from 'nbtify'
+import { Int16, Int32, Int8, NBTData, write } from 'nbtify'
 import type { InstrumentId, NoteId } from '../parse-nbs'
 import type { GrayCodeStream } from '../process-binary-stream'
 import {
@@ -52,6 +52,11 @@ export async function parseInstrumentStreams(
   palette['minecraft:chest[facing=west,type=left]'] = new Int32(customPaletteBlockIds.chestWestLeft)
   palette['minecraft:chest[facing=west,type=right]'] = new Int32(customPaletteBlockIds.chestWestRight)
 
+  palette['minecraft:oak_wall_sign[facing=east]'] = new Int32(customPaletteBlockIds.signEast)
+  palette['minecraft:oak_wall_sign[facing=west]'] = new Int32(customPaletteBlockIds.signWest)
+  palette['minecraft:oak_wall_sign[facing=north]'] = new Int32(customPaletteBlockIds.signNorth)
+  palette['minecraft:oak_wall_sign[facing=south]'] = new Int32(customPaletteBlockIds.signSouth)
+
   palette['minecraft:air'] = new Int32(customPaletteBlockIds.air)
   palette['minecraft:blackstone_stairs[facing=south,half=top,shape=straight]'] = new Int32(
     customPaletteBlockIds.noteNotUsedBlockId,
@@ -61,6 +66,7 @@ export async function parseInstrumentStreams(
   )
 
   const blockIds: number[] = new Array(width * height * depth).fill(customPaletteBlockIds.air)
+  const blockEntities: BlockEntity[] = []
 
   const allPossibleNoteValues: [(typeof instrumentBlockIds)[number], NoteId][] = []
   for (const instrumentName of instrumentBlockIds) {
@@ -86,9 +92,56 @@ export async function parseInstrumentStreams(
       blockIds[coordIndex] = customPaletteBlockIds.noteNotUsedBlockId
     }
 
-  }
+    // -- SNIP HERE --
+    // helper blocks, to make it easier to see what instrument and note is where
+    const oppositeDirection = rotateDirectionQuarterClockwise(localCoords.direction, 2)
 
-  const blockEntities: BlockEntity[] = []
+    const instrumentBlockCoord = coordinateOffset(inRegionCoords, oppositeDirection, 1)
+    const instrumentBlockIndex = coordinateToIndexXZY(
+      instrumentBlockCoord.x,
+      instrumentBlockCoord.z,
+      instrumentBlockCoord.y,
+    )
+    blockIds[instrumentBlockIndex] = instrumentId
+
+    if (blockName === 'minecraft:sand' && instrumentBlockCoord.y > 0) {
+      // place block underneath the sand block, so it doesn't fall
+      const underSandCoord = { ...instrumentBlockCoord, y: instrumentBlockCoord.y - 1 }
+      const underSandIndex = coordinateToIndexXZY(underSandCoord.x, underSandCoord.z, underSandCoord.y)
+      blockIds[underSandIndex] = customPaletteBlockIds.noteNotUsedBlockId
+    }
+
+    const signBlockCoord = coordinateOffset(instrumentBlockCoord, oppositeDirection, 1)
+    const signBlockIndex = coordinateToIndexXZY(signBlockCoord.x, signBlockCoord.z, signBlockCoord.y)
+
+    const signBlockId = (dir => {
+      switch (dir) {
+        case 'north':
+          return customPaletteBlockIds.signNorth
+        case 'south':
+          return customPaletteBlockIds.signSouth
+        case 'east':
+          return customPaletteBlockIds.signEast
+        case 'west':
+          return customPaletteBlockIds.signWest
+      }
+    })(oppositeDirection)
+
+    blockIds[signBlockIndex] = signBlockId
+    const signEntity: BlockEntity = {
+      Id: 'minecraft:sign',
+      Pos: new Int32Array([signBlockCoord.x, signBlockCoord.y, signBlockCoord.z]),
+      Data: {
+        id: 'minecraft:sign',
+        front_text: {
+          messages: ['""', `"${noteId}"`, '""', '""'],
+          has_glowing_text: new Int8(1),
+        },
+      },
+    }
+    blockEntities.push(signEntity)
+    // -- SNIP HERE --
+  }
 
   for (const [instrumentIdAsString, notes] of Object.entries(input)) {
     for (const [noteIdAsString, [stream1, stream2]] of Object.entries(notes)) {

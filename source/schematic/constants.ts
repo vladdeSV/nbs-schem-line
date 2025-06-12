@@ -109,9 +109,14 @@ export const customPaletteBlockIds = {
   chestWestLeft: 106,
   chestWestRight: 107,
 
-  air: 110,
-  noteNotUsedBlockId: 111, // note does not exist at all
-  singleStreamMissingBlockId: 112, // missing one of the two double chests
+  signNorth: 108,
+  signSouth: 109,
+  signEast: 110,
+  signWest: 111,
+
+  air: 120,
+  noteNotUsedBlockId: 121, // note does not exist at all
+  singleStreamMissingBlockId: 122, // missing one of the two double chests
 } as const
 
 export function getChestPaletteId(side: 'left' | 'right', direction: Direction): number {

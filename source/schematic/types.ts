@@ -1,4 +1,4 @@
-import type { Int8, Int16, Int32 } from 'nbtify'
+import type { Int16, Int32, Int8 } from 'nbtify'
 
 export interface Schem {
   Schematic: WorldEditSchematic
@@ -28,7 +28,8 @@ export interface BlockEntity {
   Pos: Int32Array
   Data: {
     id: string
-    Items: BlockEntityData[]
+    Items?: BlockEntityData[]
+    [key: string]: unknown
   }
 }
 
