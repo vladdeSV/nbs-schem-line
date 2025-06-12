@@ -119,7 +119,7 @@ export function getInRegionCoordinates(
 
 /// allows us to easily get the "next coodirnate" by an offset (used for chests)
 /// essentially takes a direction, rotates 90° clockwise, then moves in that direction
-export function coordinateOffset(
+export function coordinateOffset90DegBasedOnDirection(
   coord: { x: number; y: number; z: number },
   offset: number,
   direction: Direction,
@@ -134,4 +134,28 @@ export function coordinateOffset(
     case 'west':
       return { x: coord.x, y: coord.y, z: coord.z - offset }
   }
+}
+
+export function coordinateOffset(
+  coord: { x: number; y: number; z: number },
+  direction: Direction,
+  offset: number,
+): { x: number; y: number; z: number } {
+  switch (direction) {
+    case 'south':
+      return { x: coord.x, y: coord.y, z: coord.z + offset }
+    case 'north':
+      return { x: coord.x, y: coord.y, z: coord.z - offset }
+    case 'east':
+      return { x: coord.x + offset, y: coord.y, z: coord.z }
+    case 'west':
+      return { x: coord.x - offset, y: coord.y, z: coord.z }
+  }
+}
+
+export function rotateDirectionQuarterClockwise(direction: Direction, steps = 1): Direction {
+  const directions: Direction[] = ['north', 'east', 'south', 'west']
+  const currentIndex = directions.indexOf(direction)
+  const newIndex = (currentIndex + steps) % directions.length
+  return directions[newIndex]
 }

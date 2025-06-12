@@ -10,9 +10,11 @@ import {
 } from './constants.ts'
 import {
   coordinateOffset,
+  coordinateOffset90DegBasedOnDirection,
   createAccessIndexFunctionXZY,
   getInRegionCoordinates,
   getLocalCoordinates,
+  rotateDirectionQuarterClockwise,
 } from './coordinates.ts'
 import { streamToDoubleChestContents } from './data-conversion.ts'
 import { discReaderLayout } from './layout.ts'
@@ -78,10 +80,12 @@ export async function parseInstrumentStreams(
     console.debug(blockName, noteId, 'x:', inRegionCoords.x, 'y:', inRegionCoords.y, 'z:', inRegionCoords.z)
 
     for (let i = 0; i < 4; ++i) {
-      const oc = coordinateOffset(inRegionCoords, i, localCoords.direction)
+      const rotatedDirection = rotateDirectionQuarterClockwise(localCoords.direction, 1)
+      const oc = coordinateOffset(inRegionCoords, rotatedDirection, i)
       const coordIndex = coordinateToIndexXZY(oc.x, oc.z, oc.y)
       blockIds[coordIndex] = customPaletteBlockIds.noteNotUsedBlockId
     }
+
   }
 
   const blockEntities: BlockEntity[] = []
@@ -99,7 +103,7 @@ export async function parseInstrumentStreams(
         if (!stream.every(v => v === 0)) {
           // physical positioning: baseCoord is the first chest, offset+1 is the second chest
           const firstChestCoord = baseCoord
-          const secondChestCoord = coordinateOffset(baseCoord, 1, direction)
+          const secondChestCoord = coordinateOffset90DegBasedOnDirection(baseCoord, 1, direction)
 
           const firstChestIndex = coordinateToIndexXZY(firstChestCoord.x, firstChestCoord.z, firstChestCoord.y)
           const secondChestIndex = coordinateToIndexXZY(secondChestCoord.x, secondChestCoord.z, secondChestCoord.y)
@@ -153,7 +157,7 @@ export async function parseInstrumentStreams(
           }
         } else {
           const firstChestCoord = baseCoord
-          const secondChestCoord = coordinateOffset(baseCoord, 1, direction)
+          const secondChestCoord = coordinateOffset90DegBasedOnDirection(baseCoord, 1, direction)
 
           const firstChestIndex = coordinateToIndexXZY(firstChestCoord.x, firstChestCoord.z, firstChestCoord.y)
           const secondChestIndex = coordinateToIndexXZY(secondChestCoord.x, secondChestCoord.z, secondChestCoord.y)
@@ -166,8 +170,8 @@ export async function parseInstrumentStreams(
       const localCoords = getLocalCoordinates(instrumentId, noteId)
       const baseCoords = getInRegionCoordinates(localCoords.direction, localCoords.x, localCoords.y)
 
-      const stream1Coords = coordinateOffset(baseCoords, 0, localCoords.direction)
-      const stream2Coords = coordinateOffset(baseCoords, 2, localCoords.direction)
+      const stream1Coords = coordinateOffset90DegBasedOnDirection(baseCoords, 0, localCoords.direction)
+      const stream2Coords = coordinateOffset90DegBasedOnDirection(baseCoords, 2, localCoords.direction)
 
       createDoubleChestsInGlobalData(stream1Coords, localCoords.direction, stream1)
       createDoubleChestsInGlobalData(stream2Coords, localCoords.direction, stream2)
