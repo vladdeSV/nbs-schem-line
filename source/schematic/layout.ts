@@ -13,7 +13,7 @@ export const discReaderLayout: string[][] = (() => {
 
   for (let y = 0; y < layout.length; y++) {
     for (let x = 0; x < layout[y].length; x++) {
-      const entry = layout[y][x]
+      const entry = layout[y][x].trim()
 
       if (entry === '') {
         continue

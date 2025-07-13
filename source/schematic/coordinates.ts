@@ -74,7 +74,7 @@ export function getLocalCoordinates(
 
     for (let y = 0; y < discReaderLayout.length; y++) {
       for (let x = 0; x < discReaderLayout[y].length; x++) {
-        if (discReaderLayout[y][x] === targetPattern) {
+        if (discReaderLayout[y][x].trim() === targetPattern) {
           console.debug(`glc: found at x:${x}, y:${y} in section ${position.section} (${position.direction})`)
           return { x, y, direction: position.direction }
         }
