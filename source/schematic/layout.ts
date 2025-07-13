@@ -4,6 +4,7 @@ export const discReaderLayout: string[][] = (() => {
   const csvContent = readFileSync('./resource/layouts/xolix.csv', 'utf-8')
   const layout = csvContent
     .trim()
+    .replaceAll('\r\n', '\n')
     .split('\n')
     .map(line => line.split(','))
 
