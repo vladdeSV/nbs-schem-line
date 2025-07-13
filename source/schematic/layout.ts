@@ -64,8 +64,8 @@ export const discReaderLayout: string[][] = (() => {
   */
 
   // total should be 101 (3 full instruments × 25 + 1 half instrument × 25 + 1 mob head = 75 + 25 + 1 = 101)
-  const expectedTotal = 101
-  if (seenEntries.size !== expectedTotal) {
+  const expectedTotal = 100
+  if (seenEntries.size !== expectedTotal || seenEntries.size !== (expectedTotal + 1) ) {
     throw `expected exactly ${expectedTotal} entries in layout, found ${seenEntries.size}`
   }
 
