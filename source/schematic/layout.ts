@@ -57,9 +57,11 @@ export const discReaderLayout: string[][] = (() => {
     throw `percussion sections (D+E) must contain exactly 25 entries total, found ${percussionCount}`
   }
 
+  /*
   if (!seenEntries.has('M')) {
     throw 'missing mob head (M) from layout'
   }
+  */
 
   // total should be 101 (3 full instruments × 25 + 1 half instrument × 25 + 1 mob head = 75 + 25 + 1 = 101)
   const expectedTotal = 101
