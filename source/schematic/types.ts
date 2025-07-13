@@ -49,4 +49,4 @@ export interface ItemComponent {
 }
 
 export type Direction = 'north' | 'south' | 'east' | 'west'
-export type Section = 'top' | 'middle' | 'bottom' | 'percussion-left' | 'percussion-right'
+export type Section = 'top' | 'middle' | 'bottom' | 'percussion-left' | 'percussion-right' | 'mob-head'

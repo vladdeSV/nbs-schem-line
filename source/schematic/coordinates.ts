@@ -59,6 +59,7 @@ export function getLocalCoordinates(
     bottom: 'C',
     'percussion-left': 'E',
     'percussion-right': 'D',
+    'mob-head': 'M',
   }
 
   if (positions.length > 1) {

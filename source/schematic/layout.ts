@@ -8,7 +8,7 @@ export const discReaderLayout: string[][] = (() => {
     .split('\n')
     .map(line => line.split(','))
 
-  const validPattern = /^[A-E]([0-1]\d|2[0-4])$/
+  const validPattern = /^[A-E]([0-1]\d|2[0-4])|M$/
   const seenEntries = new Set<string>()
 
   for (let y = 0; y < layout.length; y++) {
@@ -57,8 +57,12 @@ export const discReaderLayout: string[][] = (() => {
     throw `percussion sections (D+E) must contain exactly 25 entries total, found ${percussionCount}`
   }
 
-  // total should be 100 (3 full instruments × 25 + 1 half instrument × 25 = 75 + 25 = 100)
-  const expectedTotal = 100
+  if (!seenEntries.has('M')) {
+    throw 'missing mob head (M) from layout'
+  }
+
+  // total should be 101 (3 full instruments × 25 + 1 half instrument × 25 + 1 mob head = 75 + 25 + 1 = 101)
+  const expectedTotal = 101
   if (seenEntries.size !== expectedTotal) {
     throw `expected exactly ${expectedTotal} entries in layout, found ${seenEntries.size}`
   }
