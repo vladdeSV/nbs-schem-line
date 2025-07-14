@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 
 export const discReaderLayout: string[][] = (() => {
-  const csvContent = readFileSync('./resource/layouts/xolix.csv', 'utf-8')
+  const csvContent = readFileSync('./resource/layouts/wall_layout.csv', 'utf-8')
   const layout = csvContent
     .trim()
     .replaceAll('\r\n', '\n')
@@ -33,7 +33,7 @@ export const discReaderLayout: string[][] = (() => {
   // validate that all required entries are present
   const requiredSections = ['A', 'B', 'C'] // top, middle, bottom (full instruments)
   const percussionSections = ['D', 'E'] // percussion sections (halves)
-  
+
   // check A00-A24, B00-B24, C00-C24 (3 full instruments × 25 notes = 75 entries each)
   for (const section of requiredSections) {
     for (let note = 0; note <= 24; note++) {
