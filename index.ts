@@ -9,24 +9,26 @@ if (!process.argv.includes('-v')) {
 }
 
 // filter out flags
-process.argv = process.argv.filter(arg => !arg.startsWith('-'))
+const filteredArgs = process.argv.filter(arg => !arg.startsWith('-'))
 
-const filepath = process.argv[2]
+const filepath = filteredArgs[2]
 if (filepath === undefined) {
   console.error('usage: node index.ts <file.nbs> [output.schem]')
   process.exit(1)
 }
 
-let output = process.argv[3]
+let output = filteredArgs[3]
 
 if (output === undefined) {
   output = filepath.replace(/\.nbs$/, '.schem')
   console.info(`info: no output file specified, using './${output}'`)
 }
 
+const useHelpers = !process.argv.includes('--no-helpers')
+
 const notes = parseNBSFile(filepath)
 const processed = processBinaryStreams(notes)
-const data: Uint8Array<ArrayBufferLike> = await parseInstrumentStreams(processed)
+const data: Uint8Array<ArrayBufferLike> = await parseInstrumentStreams(processed, useHelpers)
 
 writeFileSync(output, data)
-console.info(`info: wrote to file '${output}'!`)
+console.info(`info: wrote to file '${output}'! (useHelpers=${useHelpers})`)
