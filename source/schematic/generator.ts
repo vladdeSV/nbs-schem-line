@@ -3,6 +3,7 @@ import type { InstrumentId, NoteId } from '../parse-nbs'
 import type { GrayCodeStream } from '../process-binary-stream'
 import {
   GLOBAL_Y_OFFSET,
+  VERTICAL_SPACING,
   WALL_DISTANCE,
   customPaletteBlockIds,
   getChestPaletteId,
@@ -18,7 +19,7 @@ import {
 } from './coordinates.ts'
 import { streamToDoubleChestContents } from './data-conversion.ts'
 import { discReaderLayout } from './layout.ts'
-import type { BlockEntity, BlockEntityData, BlockPalette, Schem, WorldEditSchematic } from './types.ts'
+import type { BlockEntity, BlockEntityData, BlockPalette, Direction, Schem, WorldEditSchematic } from './types.ts'
 
 export { instrumentBlockIds } from './constants.ts'
 export { findInstrumentPositions, getLocalCoordinates } from './coordinates.ts'
@@ -32,9 +33,12 @@ export async function parseInstrumentStreams(
 
   console.log(instrumentIdsOrdered)
 
-  const width = WALL_DISTANCE * 2 + 1
+  const centerBlock = 1
+  const extraOuterSpacing = 1
+
+  const width = WALL_DISTANCE * 2 + centerBlock + extraOuterSpacing * 2
   const depth = width
-  const height = discReaderLayout.length * 10 + 1
+  const height = discReaderLayout.length * VERTICAL_SPACING
 
   const coordinateToIndexXZY = createAccessIndexFunctionXZY(width, depth, height)
 
@@ -154,7 +158,7 @@ export async function parseInstrumentStreams(
 
       function createDoubleChestsInGlobalData(
         baseCoord: { x: number; y: number; z: number },
-        direction: import('./types').Direction,
+        direction: Direction,
         stream: GrayCodeStream,
       ) {
         if (!stream.every(v => v === 0)) {
@@ -224,6 +228,21 @@ export async function parseInstrumentStreams(
         }
       }
 
+      function createEmptyOutputChestsBasedOnInputChestCoordsInGlobalData(
+        baseCoord: { x: number; y: number; z: number },
+        direction: Direction,
+      ) {
+        const newBaseCoord = { ...baseCoord, y: baseCoord.y - (VERTICAL_SPACING - 1)}
+        const chestLookingDirection = rotateDirectionQuarterClockwise(direction, 3)
+        const secondCoord = coordinateOffset90DegBasedOnDirection(newBaseCoord, 1, chestLookingDirection)
+
+        const a = coordinateToIndexXZY(newBaseCoord.x, newBaseCoord.z, newBaseCoord.y)
+        const b = coordinateToIndexXZY(secondCoord.x, secondCoord.z, secondCoord.y)
+
+        blockIds[a] = getChestPaletteId('right', chestLookingDirection)
+        blockIds[b] = getChestPaletteId('left', chestLookingDirection)
+      }
+
       const localCoords = getLocalCoordinates(instrumentId, noteId)
       const baseCoords = getInRegionCoordinates(localCoords.direction, localCoords.x, localCoords.y)
 
@@ -232,7 +251,14 @@ export async function parseInstrumentStreams(
 
       createDoubleChestsInGlobalData(stream1Coords, localCoords.direction, stream1)
       createDoubleChestsInGlobalData(stream2Coords, localCoords.direction, stream2)
+
+      createEmptyOutputChestsBasedOnInputChestCoordsInGlobalData(stream1Coords, localCoords.direction)
+      createEmptyOutputChestsBasedOnInputChestCoordsInGlobalData(stream2Coords, localCoords.direction)
     }
+  }
+
+  for (let i = 0; i < width * depth; ++i) {
+    blockIds[i] = i % 2 === 0 ? customPaletteBlockIds.noteNotUsedBlockId : customPaletteBlockIds.singleStreamMissingBlockId
   }
 
   const data: WorldEditSchematic = {

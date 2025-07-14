@@ -1,5 +1,5 @@
 import type { InstrumentId, NoteId } from '../parse-nbs'
-import { WALL_DISTANCE, directionSectionToInstrument, instrumentBlockIds } from './constants.ts'
+import { VERTICAL_SPACING, WALL_DISTANCE, directionSectionToInstrument, instrumentBlockIds } from './constants.ts'
 import { discReaderLayout, discReaderLayoutMaxWidth } from './layout.ts'
 import type { Direction, Section } from './types.ts'
 
@@ -94,27 +94,28 @@ export function getInRegionCoordinates(
   localY: number,
 ): { x: number; y: number; z: number } {
   // here be dragons
+  const spaghettiExtraSpacing = 1 // for the extra spacing when eptying chests :sob:
 
   // in order to "center" each wall, we figure out how many blocks should each section should be padded with
-  const adjustedX = localX * 4 + (WALL_DISTANCE - 4 * Math.floor(discReaderLayoutMaxWidth / 2))
+  const adjustedX = localX * 4 + (WALL_DISTANCE - 4 * Math.floor(discReaderLayoutMaxWidth / 2)) + spaghettiExtraSpacing
   // also: because our region width and depth is odd-numbered, the whole thing will be techincally off-centered by 1 block
 
   // our local y has y=0 at the top, but world space needs y=0 at the bottom (so we flip it)
   // vladde: also, i'm not too sure, but i might have messed up the height here?
-  const invertedY = (discReaderLayout.length - 1 - localY) * 11
+  const invertedY = (discReaderLayout.length - 1 - localY) * VERTICAL_SPACING
 
   // vladde: i think our full width is `WALL_DISTANCE * 2 + 1`, but the caluclations are off if i include the `+ 1`. weird.
   const fullWidth = WALL_DISTANCE * 2
 
   switch (direction) {
     case 'south':
-      return { x: fullWidth - adjustedX, y: invertedY, z: fullWidth }
+      return { x: fullWidth - adjustedX, y: invertedY, z: fullWidth + spaghettiExtraSpacing }
     case 'west':
-      return { x: 0, y: invertedY, z: fullWidth - adjustedX }
+      return { x: 0 + spaghettiExtraSpacing, y: invertedY, z: fullWidth - adjustedX }
     case 'north':
-      return { x: adjustedX, y: invertedY, z: 0 }
+      return { x: adjustedX, y: invertedY, z: spaghettiExtraSpacing }
     case 'east':
-      return { x: fullWidth, y: invertedY, z: adjustedX }
+      return { x: fullWidth + spaghettiExtraSpacing, y: invertedY, z: adjustedX }
   }
 }
 
