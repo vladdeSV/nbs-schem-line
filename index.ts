@@ -24,7 +24,7 @@ if (output === undefined) {
   console.info(`info: no output file specified, using './${output}'`)
 }
 
-const useHelpers = !process.argv.includes('--no-helpers')
+const useHelpers = process.argv.includes('--use-helpers')
 
 const notes = parseNBSFile(filepath)
 const processed = processBinaryStreams(notes)
