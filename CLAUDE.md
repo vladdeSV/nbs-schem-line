@@ -35,8 +35,11 @@ The converter creates timing streams for Minecraft's music system:
 # Basic usage with verbose output
 node --no-warnings index.ts -v 'input.nbs'
 
-# With custom output filename  
+# With custom output filename
 node --no-warnings index.ts -v 'input.nbs' output.schem
+
+# With helper blocks and signs to denote instrument and pitch
+node --no-warnings index.ts -v 'input.nbs' output.schem --use-helpers
 ```
 
 ### Code Quality
