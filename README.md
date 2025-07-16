@@ -22,13 +22,14 @@ npm i
 run with
 
 ```sh
-node --no-warnings index.ts -v 'Turkish March.nbs' output.schem
+node --no-warnings index.ts -v 'Turkish March.nbs' output.schem --use-helpers
 ```
 
 - `index.ts` is the main file
 - `--no-warnings` just turns of the notice that typescript is experimental
-- `-v` is for verbose output, which i use to just see what is going on
+- `-v` is for verbose output, which I use to just see what is going on
 - `output.schem` is an optional filename; if omitted, the output file will just be the input file name but with an `.nbs` extension
+- `--use-helpers` is an optional flag that includes blocks and signs denoting the instrument and pitch of each chest (see [helper visualizer blocks](#helper-visualizer-blocks)). Useful for pasting in the world outside of the machine to check for accuracy. ***Should be omitted when generating a schematic to paste into the machine.***
 
 then move the output file into the WorldEdit schematics folder
 
@@ -53,5 +54,4 @@ every instrument+note get a pair of double chests. to easier see what instrument
 
 it is [this section](source/schematic/generator.ts#L95-L143) in the code which adds this visualizer block.
 
-- to remove the block and sign complpetely, just remove that section
 - to shift the block, you need to modify the `instrumentBlockCoord`. right now it's just shifted inwards 1 block, but you can modify the coords as you want.
