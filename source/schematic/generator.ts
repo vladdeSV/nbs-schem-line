@@ -242,7 +242,7 @@ export async function parseInstrumentStreams(
           }
         } else {
           const firstChestCoord = { ...baseCoord, y: baseCoord.y + (VERTICAL_SPACING - 1) }
-          const secondChestCoord = coordinateOffset90DegBasedOnDirection(baseCoord, 1, direction)
+          const secondChestCoord = coordinateOffset90DegBasedOnDirection(firstChestCoord, 1, direction)
 
           const firstChestIndex = coordinateToIndexXZY(firstChestCoord.x, firstChestCoord.z, firstChestCoord.y)
           const secondChestIndex = coordinateToIndexXZY(secondChestCoord.x, secondChestCoord.z, secondChestCoord.y)
