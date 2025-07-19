@@ -84,6 +84,21 @@ export async function parseInstrumentStreams(
     }
   }
 
+  function createEmptyOutputChestsBasedOnInputChestCoordsInGlobalData(
+    baseCoord: { x: number; y: number; z: number },
+    direction: Direction,
+  ) {
+    const newBaseCoord = { ...baseCoord, y: baseCoord.y }
+    const chestLookingDirection = rotateDirectionQuarterClockwise(direction, 3)
+    const secondCoord = coordinateOffset90DegBasedOnDirection(newBaseCoord, 1, chestLookingDirection)
+
+    const a = coordinateToIndexXZY(newBaseCoord.x, newBaseCoord.z, newBaseCoord.y)
+    const b = coordinateToIndexXZY(secondCoord.x, secondCoord.z, secondCoord.y)
+
+    blockIds[a] = getChestPaletteId('right', chestLookingDirection)
+    blockIds[b] = getChestPaletteId('left', chestLookingDirection)
+  }
+
   for (const [blockName, noteId] of allPossibleNoteValues) {
     const instrumentId: InstrumentId = instrumentBlockIds.indexOf(blockName)
     const localCoords = getLocalCoordinates(instrumentId, noteId)
@@ -94,10 +109,16 @@ export async function parseInstrumentStreams(
     const inRegionCoords = getInRegionCoordinates(localCoords.direction, localCoords.x, localCoords.y)
     console.debug(blockName, noteId, 'x:', inRegionCoords.x, 'y:', inRegionCoords.y, 'z:', inRegionCoords.z)
 
+    const ima = coordinateOffset90DegBasedOnDirection(inRegionCoords, 0, localCoords.direction)
+    const imb = coordinateOffset90DegBasedOnDirection(inRegionCoords, 2, localCoords.direction)
+
+    createEmptyOutputChestsBasedOnInputChestCoordsInGlobalData(ima, localCoords.direction)
+    createEmptyOutputChestsBasedOnInputChestCoordsInGlobalData(imb, localCoords.direction)
+
     for (let i = 0; i < 4; ++i) {
       const rotatedDirection = rotateDirectionQuarterClockwise(localCoords.direction, 1)
       const oc = coordinateOffset(inRegionCoords, rotatedDirection, i)
-      const coordIndex = coordinateToIndexXZY(oc.x, oc.z, oc.y)
+      const coordIndex = coordinateToIndexXZY(oc.x, oc.z, oc.y + (VERTICAL_SPACING - 1))
       blockIds[coordIndex] = customPaletteBlockIds.noteNotUsedBlockId
     }
 
@@ -106,6 +127,8 @@ export async function parseInstrumentStreams(
       const oppositeDirection = rotateDirectionQuarterClockwise(localCoords.direction, 2)
 
       const instrumentBlockCoord = coordinateOffset(inRegionCoords, oppositeDirection, 1)
+      instrumentBlockCoord.y += VERTICAL_SPACING - 1 // mamma mia
+
       const instrumentBlockIndex = coordinateToIndexXZY(
         instrumentBlockCoord.x,
         instrumentBlockCoord.z,
@@ -164,8 +187,8 @@ export async function parseInstrumentStreams(
       ) {
         if (!stream.every(v => v === 0)) {
           // physical positioning: baseCoord is the first chest, offset+1 is the second chest
-          const firstChestCoord = baseCoord
-          const secondChestCoord = coordinateOffset90DegBasedOnDirection(baseCoord, 1, direction)
+          const firstChestCoord = { ...baseCoord, y: baseCoord.y + (VERTICAL_SPACING - 1) }
+          const secondChestCoord = coordinateOffset90DegBasedOnDirection(firstChestCoord, 1, direction)
 
           const firstChestIndex = coordinateToIndexXZY(firstChestCoord.x, firstChestCoord.z, firstChestCoord.y)
           const secondChestIndex = coordinateToIndexXZY(secondChestCoord.x, secondChestCoord.z, secondChestCoord.y)
@@ -218,7 +241,7 @@ export async function parseInstrumentStreams(
             blockEntities.push(blockEntity)
           }
         } else {
-          const firstChestCoord = baseCoord
+          const firstChestCoord = { ...baseCoord, y: baseCoord.y + (VERTICAL_SPACING - 1) }
           const secondChestCoord = coordinateOffset90DegBasedOnDirection(baseCoord, 1, direction)
 
           const firstChestIndex = coordinateToIndexXZY(firstChestCoord.x, firstChestCoord.z, firstChestCoord.y)
@@ -229,21 +252,6 @@ export async function parseInstrumentStreams(
         }
       }
 
-      function createEmptyOutputChestsBasedOnInputChestCoordsInGlobalData(
-        baseCoord: { x: number; y: number; z: number },
-        direction: Direction,
-      ) {
-        const newBaseCoord = { ...baseCoord, y: baseCoord.y - (VERTICAL_SPACING - 1)}
-        const chestLookingDirection = rotateDirectionQuarterClockwise(direction, 3)
-        const secondCoord = coordinateOffset90DegBasedOnDirection(newBaseCoord, 1, chestLookingDirection)
-
-        const a = coordinateToIndexXZY(newBaseCoord.x, newBaseCoord.z, newBaseCoord.y)
-        const b = coordinateToIndexXZY(secondCoord.x, secondCoord.z, secondCoord.y)
-
-        blockIds[a] = getChestPaletteId('right', chestLookingDirection)
-        blockIds[b] = getChestPaletteId('left', chestLookingDirection)
-      }
-
       const localCoords = getLocalCoordinates(instrumentId, noteId)
       const baseCoords = getInRegionCoordinates(localCoords.direction, localCoords.x, localCoords.y)
 
@@ -252,15 +260,14 @@ export async function parseInstrumentStreams(
 
       createDoubleChestsInGlobalData(stream1Coords, localCoords.direction, stream1)
       createDoubleChestsInGlobalData(stream2Coords, localCoords.direction, stream2)
-
-      createEmptyOutputChestsBasedOnInputChestCoordsInGlobalData(stream1Coords, localCoords.direction)
-      createEmptyOutputChestsBasedOnInputChestCoordsInGlobalData(stream2Coords, localCoords.direction)
     }
   }
 
+  /*
   for (let i = 0; i < width * depth; ++i) {
     blockIds[i] = i % 2 === 0 ? customPaletteBlockIds.noteNotUsedBlockId : customPaletteBlockIds.singleStreamMissingBlockId
   }
+  */
 
   const data: WorldEditSchematic = {
     Version: new Int32(3),
