@@ -1,4 +1,6 @@
 import type { InstrumentId, NoteId, Stream } from './parse-nbs.js'
+import { xoliksCode } from './schematic/constants.ts'
+import { isNumberSupportedGrayCode, type TruthyGrayValue } from './schematic/data-conversion.ts'
 
 export function processBinaryStreams(
   streams: Record<InstrumentId, Record<NoteId, Stream>>,
@@ -53,6 +55,24 @@ function splitBinaryStreams(
   return result
 }
 
+/// converts gray code to redstone signal
+export function getReverseGrayCode(value: number): TruthyGrayValue | 0 {
+  for (const [signalStrength, code] of Object.entries(xoliksCode)) {
+    if (value === code) {
+      const ss = Number(signalStrength)
+      if (!isNumberSupportedGrayCode(ss) && ss !== 0) {
+        console.error('signal strength is not a supported number', signalStrength)
+        process.exit(1)
+      }
+
+      return ss
+    }
+  }
+
+  console.error('value does not exist in the reverse lookup', value)
+  process.exit(1)
+}
+
 export type GrayCodeStream = number[]
 function processStreams(
   a: Record<InstrumentId, Record<NoteId, [Stream, Stream]>>,
@@ -60,34 +80,6 @@ function processStreams(
   function encodeStream(stream: Stream): GrayCodeStream {
     console.assert(stream.length % 4 === 0, 'stream length is not a multiple of 4', stream.length)
 
-    /// used to get the redstone signal (thus, disc) from the note value
-    function getReverseGrayCode(value: number): number {
-      const reverseGrayCodeLookup: Record<number, number> = {
-        /* 0000 */ 0: 0,
-        /* 0001 */ 1: 1,
-        /* 0011 */ 3: 2,
-        /* 0010 */ 2: 3,
-        /* 0110 */ 6: 4,
-        /* 0111 */ 7: 5,
-        /* 0101 */ 5: 6,
-        /* 0100 */ 4: 7,
-        /* 1100 */ 12: 8,
-        /* 1101 */ 13: 9,
-        /* 1111 */ 15: 10,
-        /* 1110 */ 14: 11,
-        /* 1010 */ 10: 12,
-        /* 1011 */ 11: 13,
-        /* 1001 */ 9: 14,
-        /* 1000 */ 8: 15,
-      }
-
-      if (!(value in reverseGrayCodeLookup)) {
-        console.error('value not in reverseGrayCodeLookup', value)
-        process.exit(1)
-      }
-
-      return reverseGrayCodeLookup[value]
-    }
 
     const grayCodedStream: GrayCodeStream = []
     for (let i = 0; i < stream.length; i += 4) {
