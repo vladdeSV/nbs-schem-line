@@ -98,6 +98,7 @@ export function getInRegionCoordinates(
 
   // in order to "center" each wall, we figure out how many blocks should each section should be padded with
   const adjustedX = localX * 4 + (WALL_DISTANCE - 4 * Math.floor(discReaderLayoutMaxWidth / 2)) + spaghettiExtraSpacing
+    + ((direction == 'south' || direction == 'west') ? -4 : 2) // mamma mia, sphagettiria
   // also: because our region width and depth is odd-numbered, the whole thing will be techincally off-centered by 1 block
 
   // our local y has y=0 at the top, but world space needs y=0 at the bottom (so we flip it)
