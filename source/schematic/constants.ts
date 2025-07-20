@@ -6,6 +6,26 @@ export const WALL_DISTANCE = 135 // distance from the center to the disc reader 
 export const VERTICAL_SPACING = 8 // blocks between each row of chests
 export const GLOBAL_Y_OFFSET = -27 // global y offset for all blocks, for tweaking everything all at once :)
 
+/// source of truth – use this whenever trying to convert between "gray code"
+export const xoliksCode = {
+  0: 0b0000,
+  1: 0b0100,
+  2: 0b0101,
+  3: 0b0111,
+  4: 0b0110,
+  5: 0b0001,
+  6: 0b0011,
+  7: 0b0010,
+  8: 0b1010,
+  9: 0b1011,
+  10: 0b1001,
+  11: 0b1000,
+  12: 0b1100,
+  13: 0b1101,
+  14: 0b1111,
+  15: 0b1110,
+}
+
 export const signalStrengthToDiscName = {
   1: 'minecraft:music_disc_13',
   2: 'minecraft:music_disc_cat',

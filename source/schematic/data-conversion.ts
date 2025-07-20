@@ -5,7 +5,7 @@ import type { BlockEntityData, ItemComponent } from './types.ts'
 
 type TruthyGrayValue = keyof typeof signalStrengthToDiscName
 
-function isNumberSupportedGrayCode(value: unknown): value is TruthyGrayValue {
+export function isNumberSupportedGrayCode(value: unknown): value is TruthyGrayValue {
   if (typeof value !== 'number') {
     return false
   }
@@ -14,26 +14,7 @@ function isNumberSupportedGrayCode(value: unknown): value is TruthyGrayValue {
     throw `gray code is not an integer: ${value}`
   }
 
-  switch (value) {
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-    case 7:
-    case 8:
-    case 9:
-    case 10:
-    case 11:
-    case 12:
-    case 13:
-    case 14:
-    case 15:
-      return true
-    default:
-      return false
-  }
+  return Number.isInteger(value) && value >= 1 && value <= 15
 }
 
 type ItemSlotRepresentation =
