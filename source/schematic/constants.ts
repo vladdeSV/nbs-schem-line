@@ -6,7 +6,7 @@ export const WALL_DISTANCE = 135 // distance from the center to the disc reader 
 export const VERTICAL_SPACING = 8 // blocks between each row of chests
 export const GLOBAL_Y_OFFSET = -27 // global y offset for all blocks, for tweaking everything all at once :)
 
-export const grayCodeToDiscName = {
+export const signalStrengthToDiscName = {
   1: 'minecraft:music_disc_13',
   2: 'minecraft:music_disc_cat',
   3: 'minecraft:music_disc_blocks',
