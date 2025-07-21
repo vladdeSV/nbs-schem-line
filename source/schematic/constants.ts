@@ -8,23 +8,23 @@ export const GLOBAL_Y_OFFSET = -27 // global y offset for all blocks, for tweaki
 
 /// source of truth – use this whenever trying to convert between "gray code"
 export const xoliksCode = {
-  /* signal strength -> xoliks code */
-  0: 0b0000,
-  1: 0b0100,
-  2: 0b0101,
-  3: 0b0111,
-  4: 0b0110,
-  5: 0b0001,
-  6: 0b0011,
-  7: 0b0010,
-  8: 0b1010,
-  9: 0b1011,
-  10: 0b1001,
-  11: 0b1000,
-  12: 0b1100,
-  13: 0b1101,
-  14: 0b1111,
-  15: 0b1110,
+  /* number -> xoliks code */
+  0b0000: 0b0000,
+  0b0001: 0b0100,
+  0b0010: 0b0101,
+  0b0011: 0b0111,
+  0b0100: 0b0110,
+  0b0101: 0b0001,
+  0b0110: 0b0011,
+  0b0111: 0b0010,
+  0b1000: 0b1010,
+  0b1001: 0b1011,
+  0b1010: 0b1001,
+  0b1011: 0b1000,
+  0b1100: 0b1100,
+  0b1101: 0b1101,
+  0b1110: 0b1111,
+  0b1111: 0b1110,
 }
 
 export const signalStrengthToDiscName = {

@@ -1,6 +1,5 @@
 import { Int32, Int8 } from 'nbtify'
 import type { GrayCodeStream } from '../process-binary-stream.ts'
-import { getReverseGrayCode } from '../process-binary-stream.ts'
 import { signalStrengthToDiscName, woolBlockIds } from './constants.ts'
 import type { BlockEntityData, ItemComponent } from './types.ts'
 
@@ -21,7 +20,7 @@ export function isNumberSupportedGrayCode(value: unknown): value is TruthyGrayVa
 type ItemSlotRepresentation =
   | {
     type: 'disc'
-    gray: TruthyGrayValue
+    signal: TruthyGrayValue
   }
   | {
     type: 'pause'
@@ -54,7 +53,7 @@ function streamToItemRepresentation(stream: GrayCodeStream): ItemSlotRepresentat
       currentPauseAmount = 0
     }
 
-    itemSlots.push({ type: 'disc', gray: value })
+    itemSlots.push({ type: 'disc', signal: value })
   }
 
   return itemSlots
@@ -94,10 +93,9 @@ function createShulkerBoxContainerListFromItemRepresentations(items: ItemSlotRep
       currentlyIsPause = false
     }
 
-    const signalStrength = getReverseGrayCode(item.gray)
     components.push({
       item: {
-        id: signalStrengthToDiscName[signalStrength],
+        id: signalStrengthToDiscName[item.signal],
         count: new Int32(1),
       },
       slot: new Int32(index),
