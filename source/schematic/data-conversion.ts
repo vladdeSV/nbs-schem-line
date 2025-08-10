@@ -56,11 +56,9 @@ function streamToItemRepresentation(stream: GrayCodeStream): ItemSlotRepresentat
     itemSlots.push({ type: 'disc', signal: value })
   }
 
-  if (itemSlots.length % 27 === 1) {
-    let lastItem = itemSlots[itemSlots.length - 1]
-    if (lastItem.type === 'disc') {
-      itemSlots.push({ type: 'pause', count: 1 })
-    }
+  if (itemSlots.length % 27 < 3) {
+    // just ensure there are at least 3 items
+    itemSlots.push({ type: 'pause', count: 2 })
   }
 
   return itemSlots
