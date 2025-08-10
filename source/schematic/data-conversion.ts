@@ -56,9 +56,12 @@ function streamToItemRepresentation(stream: GrayCodeStream): ItemSlotRepresentat
     itemSlots.push({ type: 'disc', signal: value })
   }
 
-  if (itemSlots.length % 27 < 3) {
-    // just ensure there are at least 3 items
-    itemSlots.push({ type: 'pause', count: 2 })
+  // just ensure there are at least 3 items in total, required by redstone music machine
+  const minimumAmountOfItems = 3
+  const totalItemCount = itemSlots.reduce((prev, current) => current.type === 'pause' ? prev + current.count : prev + 1, 0)
+  const remainder = totalItemCount % 27
+  if (remainder < minimumAmountOfItems) {
+    itemSlots.push({ type: 'pause', count: minimumAmountOfItems - remainder })
   }
 
   return itemSlots
