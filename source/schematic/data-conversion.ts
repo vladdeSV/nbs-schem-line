@@ -58,8 +58,8 @@ function streamToItemRepresentation(stream: GrayCodeStream): ItemSlotRepresentat
 
   if (itemSlots.length % 27 === 1) {
     let lastItem = itemSlots[itemSlots.length - 1]
-    if ((lastItem.type === 'pause' && lastItem.count === 1) || (lastItem.type === 'disc')) {
-      itemSlots.push({type: 'pause', count: 1})
+    if (lastItem.type === 'disc') {
+      itemSlots.push({ type: 'pause', count: 1 })
     }
   }
 

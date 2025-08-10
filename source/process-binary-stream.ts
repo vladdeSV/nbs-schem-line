@@ -25,6 +25,16 @@ function splitBinaryStreams(
         second.push(stream[i])
       }
     }
+
+    // remove all trailing false
+    const removeTrailingFalseMutating = (stream: Stream) => {
+      const lastTrueIndex = stream.findLastIndex(value => value === true)
+      stream.length = lastTrueIndex === -1 ? 0 : lastTrueIndex + 1
+    }
+
+    removeTrailingFalseMutating(first)
+    removeTrailingFalseMutating(second)
+
     return [first, second]
   }
 
