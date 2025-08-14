@@ -40,7 +40,7 @@ there are some custom variables that can be tweaked, but they are variables in c
 - `GLOBAL_Y_OFFSET` global y-coordinate offset for all blocks, useful for adjusting entire schematic y-position
 
 #### layouts
-the code currently reads the [`resource/layouts/xolix.csv`](resource/layouts/xolix.csv) for defining the layout. which file is used can be changed in [`source/schematic/layout.ts`](source/schematic/layout.ts#L4). **do not include trailing commas on any line**.
+the code currently stores the layout of the chests in [`source/schematic/layout.ts`](source/schematic/layout.ts#L4). **do not include trailing commas on any line**.
 
 the layout uses a format like this: every "wall" has 5 associated instruments: three main instruments, and two "halves" of percussion instruments; every instrument has 25 different available notes, 0-24.
 
