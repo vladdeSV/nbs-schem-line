@@ -62,10 +62,6 @@ export function getLocalCoordinates(
     'mob-head': 'M',
   }
 
-  if (positions.length > 1) {
-    console.info(`glc: instrument ${instrumentBlockIds[instrumentId]} has multiple positions:`, positions)
-  }
-
   for (const position of positions) {
     const letter = sectionToLetter[position.section]
     const noteIndex = noteId.toString().padStart(2, '0')
