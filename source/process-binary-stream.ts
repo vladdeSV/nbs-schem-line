@@ -60,13 +60,13 @@ export function getReverseGrayCode(value: number): TruthyGrayValue | 0 {
   const entry = Object.entries(xoliksCode).find(([, code]) => code === value)
   
   if (!entry) {
-    throw new Error(`value does not exist in the reverse lookup: ${value}`)
+    throw `value does not exist in the reverse lookup: ${value}`
   }
 
   const signalStrength = Number(entry[0])
   
   if (!isNumberSupportedGrayCode(signalStrength) && signalStrength !== 0) {
-    throw new Error(`signal strength is not a supported number: ${signalStrength}`)
+    throw `signal strength is not a supported number: ${signalStrength}`
   }
 
   return signalStrength
@@ -78,7 +78,7 @@ function processStreams(
 ): Record<InstrumentId, Record<NoteId, [GrayCodeStream, GrayCodeStream]>> {
   const encodeStream = (stream: Stream): GrayCodeStream => {
     if (stream.length % 4 !== 0) {
-      throw new Error(`stream length is not a multiple of 4: ${stream.length}`)
+      throw `stream length is not a multiple of 4: ${stream.length}`
     }
 
     const grayCodedStream: GrayCodeStream = []
