@@ -1,4 +1,4 @@
-import { fromArrayBuffer, type Song } from '@nbsjs/core'
+import { fromArrayBuffer, Note as NBSNote, type Song, Song as SongClass } from '@nbsjs/core'
 
 export type { InstrumentId, Note, NoteId, Stream }
 
@@ -6,7 +6,8 @@ export function parseNBSFile(buffer: Buffer): Record<InstrumentId, Record<NoteId
   const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
 
   const song = fromArrayBuffer(arrayBuffer)
-  const streams = convertNBStoStreams(song)
+  const adjustedSong = validateAndAdjustSong(song)
+  const streams = convertNBStoStreams(adjustedSong)
   return streams
 }
 
@@ -17,6 +18,99 @@ type Stream = boolean[]
 interface Note {
   value: number
   instrument: number
+}
+
+const intrumentMinValue = 33
+const instrumentMaxValue = 57
+
+function validateAndAdjustSong(song: Song): Song {
+  const outOfRangeNotes = song.layers.all.some(layer =>
+    Object.values(layer.notes.all).some((note: any) =>
+      note.key < intrumentMinValue || note.key > instrumentMaxValue
+    )
+  )
+
+  const hasCustomInstruments = song.layers.all.some(layer =>
+    Object.values(layer.notes.all).some((note: any) => note.instrument > 15)
+  )
+
+  const hasIllegalTempo = song.getTempo() !== 20
+
+  if (!outOfRangeNotes && !hasCustomInstruments && !hasIllegalTempo) {
+    return song
+  }
+
+  console.warn('song contains illegal elements:')
+  if (hasIllegalTempo) {
+    console.warn(`- tempo is ${song.getTempo()} ticks per second (will be adjusted to 20)`)
+  }
+  if (outOfRangeNotes) {
+    console.warn('- notes out of range 33-57 (will be transposed to legal range)')
+  }
+  if (hasCustomInstruments) {
+    console.warn('- custom instruments >15 (will be removed)')
+  }
+  console.warn('proceeding with adjustments...')
+
+  return createAdjustedSong(song)
+}
+
+function createAdjustedSong(originalSong: Song): Song {
+  const adjustedSong = new SongClass()
+
+  // copy metadata
+  adjustedSong.name = originalSong.name
+  adjustedSong.author = originalSong.author
+  adjustedSong.originalAuthor = originalSong.originalAuthor
+  adjustedSong.description = originalSong.description
+  adjustedSong.timeSignature = originalSong.timeSignature
+  adjustedSong.setTempo(20)
+
+  const originalTempo = originalSong.getTempo()
+  const tempoDelta = (20 / originalTempo) - 1
+
+  // process each layer
+  for (const originalLayer of originalSong.layers.all) {
+    const adjustedLayer = adjustedSong.layers.create()
+    adjustedLayer.name = originalLayer.name
+    adjustedLayer.volume = originalLayer.volume
+    adjustedLayer.stereo = originalLayer.stereo
+    adjustedLayer.isLocked = originalLayer.isLocked
+    adjustedLayer.isSolo = originalLayer.isSolo
+
+    // process each note in the layer
+    for (const [tickString, note] of Object.entries(originalLayer.notes.all) as [string, any][]) {
+      const tick = Number(tickString)
+
+      // skip custom instruments
+      if (note.instrument > 15) {
+        continue
+      }
+
+      // adjust note key to legal range
+      let adjustedKey = note.key
+      while (adjustedKey < intrumentMinValue) {
+        adjustedKey += 12
+      }
+      while (adjustedKey > instrumentMaxValue) {
+        adjustedKey -= 12
+      }
+
+      // adjust timing based on tempo change
+      const adjustedTick = Math.floor(tick + tick * tempoDelta)
+
+      // add adjusted note to the layer
+      const adjustedNote = new NBSNote(note.instrument, {
+        key: adjustedKey,
+        velocity: note.velocity,
+        panning: note.panning,
+        pitch: note.pitch
+      })
+      adjustedLayer.notes.add(adjustedTick, adjustedNote)
+    }
+  }
+
+  return adjustedSong
 }
 
 function convertNBStoStreams(song: Song): Record<InstrumentId, Record<NoteId, Stream>> {
@@ -75,7 +169,7 @@ function convertNBStoStreams(song: Song): Record<InstrumentId, Record<NoteId, St
 
       if (shiftedNoteValue < 0 || shiftedNoteValue > 24) {
         console.warn(`note key ${note.key} out of expected range, skipping`)
-        process.exit(1)
+        continue
       }
 
       if (!streams[note.instrument]) {
@@ -85,17 +179,30 @@ function convertNBStoStreams(song: Song): Record<InstrumentId, Record<NoteId, St
         }
       }
 
-      streams[note.instrument][shiftedNoteValue][tick] = true
+      if (!streams[note.instrument][shiftedNoteValue]) {
+        streams[note.instrument][shiftedNoteValue] = new Array(songTickLength).fill(false)
+      }
+
+      if (tick < songTickLength) {
+        streams[note.instrument][shiftedNoteValue][tick] = true
+      }
     }
   }
 
   // remove empty streams
   for (const [instrumentIdAsString, notes] of Object.entries(streams)) {
     const instrument: InstrumentId = Number(instrumentIdAsString)
-    for (const [noteValueAsString, stream] of Object.entries(notes)) {
-      const note: NoteId = Number(noteValueAsString)
-      if (stream.every(x => x === false)) {
-        delete streams[instrument][note]
+    if (isNaN(instrument)) {
+      console.warn(`invalid instrument id: ${instrumentIdAsString}, removing`)
+      delete streams[instrumentIdAsString as any]
+      continue
+    }
+    if (notes && streams[instrument]) {
+      for (const [noteValueAsString, stream] of Object.entries(notes)) {
+        const note: NoteId = Number(noteValueAsString)
+        if (stream && stream.every(x => x === false)) {
+          delete streams[instrument][note]
+        }
       }
     }
   }
