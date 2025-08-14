@@ -24,12 +24,10 @@ if (output === undefined) {
   console.info(`info: no output file specified, using './${output}'`)
 }
 
-const useHelpers = process.argv.includes('--use-helpers')
-
 const nbs = readFileSync(filepath)
 const notes = parseNBSFile(nbs)
 const processed = processBinaryStreams(notes)
-const data: Uint8Array<ArrayBufferLike> = await parseInstrumentStreams(processed, useHelpers)
+const data: Uint8Array<ArrayBufferLike> = await parseInstrumentStreams(processed)
 
 writeFileSync(output, data)
-console.info(`info: wrote to file '${output}'! (useHelpers=${useHelpers})`)
+console.info(`info: wrote to file '${output}'`)

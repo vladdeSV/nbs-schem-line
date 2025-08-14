@@ -1,4 +1,4 @@
-import { Int16, Int32, Int8, NBTData, write } from 'nbtify'
+import { Int16, Int32, NBTData, write } from 'nbtify'
 import type { InstrumentId, NoteId } from '../parse-nbs'
 import type { GrayCodeStream } from '../process-binary-stream'
 import {
@@ -24,16 +24,7 @@ import type { BlockEntity, BlockEntityData, BlockPalette, Direction, Schem, Worl
 export { instrumentBlockIds } from './constants.ts'
 export { findInstrumentPositions, getLocalCoordinates } from './coordinates.ts'
 
-export async function parseInstrumentStreams(
-  input: Record<InstrumentId, Record<NoteId, [GrayCodeStream, GrayCodeStream]>>,
-  useHelpers: boolean,
-): Promise<Uint8Array> {
-  const instrumentIdsOrdered = Object.keys(input)
-    .map(Number)
-    .sort((a, b) => a - b)
-
-  console.log(instrumentIdsOrdered)
-
+export async function parseInstrumentStreams(input: Record<InstrumentId, Record<NoteId, [GrayCodeStream, GrayCodeStream]>>): Promise<Uint8Array> {
   const centerBlock = 1
   const extraOuterSpacing = 1
 
@@ -120,58 +111,6 @@ export async function parseInstrumentStreams(
       const oc = coordinateOffset(inRegionCoords, rotatedDirection, i)
       const coordIndex = coordinateToIndexXZY(oc.x, oc.z, oc.y + (VERTICAL_SPACING - 1))
       blockIds[coordIndex] = customPaletteBlockIds.noteNotUsedBlockId
-    }
-
-    // helper blocks, to make it easier to see what instrument and note is where
-    if (useHelpers) {
-      const oppositeDirection = rotateDirectionQuarterClockwise(localCoords.direction, 2)
-
-      const instrumentBlockCoord = coordinateOffset(inRegionCoords, oppositeDirection, 1)
-      instrumentBlockCoord.y += VERTICAL_SPACING - 1 // mamma mia
-
-      const instrumentBlockIndex = coordinateToIndexXZY(
-        instrumentBlockCoord.x,
-        instrumentBlockCoord.z,
-        instrumentBlockCoord.y,
-      )
-      blockIds[instrumentBlockIndex] = instrumentId
-
-      if (blockName === 'minecraft:sand' && instrumentBlockCoord.y > 0) {
-        // place block underneath the sand block, so it doesn't fall
-        const underSandCoord = { ...instrumentBlockCoord, y: instrumentBlockCoord.y - 1 }
-        const underSandIndex = coordinateToIndexXZY(underSandCoord.x, underSandCoord.z, underSandCoord.y)
-        blockIds[underSandIndex] = customPaletteBlockIds.noteNotUsedBlockId
-      }
-
-      const signBlockCoord = coordinateOffset(instrumentBlockCoord, oppositeDirection, 1)
-      const signBlockIndex = coordinateToIndexXZY(signBlockCoord.x, signBlockCoord.z, signBlockCoord.y)
-
-      const signBlockId = (dir => {
-        switch (dir) {
-          case 'north':
-            return customPaletteBlockIds.signNorth
-          case 'south':
-            return customPaletteBlockIds.signSouth
-          case 'east':
-            return customPaletteBlockIds.signEast
-          case 'west':
-            return customPaletteBlockIds.signWest
-        }
-      })(oppositeDirection)
-
-      blockIds[signBlockIndex] = signBlockId
-      const signEntity: BlockEntity = {
-        Id: 'minecraft:sign',
-        Pos: new Int32Array([signBlockCoord.x, signBlockCoord.y, signBlockCoord.z]),
-        Data: {
-          id: 'minecraft:sign',
-          front_text: {
-            messages: ['""', `"${noteId}"`, '""', '""'],
-            has_glowing_text: new Int8(1),
-          },
-        },
-      }
-      blockEntities.push(signEntity)
     }
   }
 
