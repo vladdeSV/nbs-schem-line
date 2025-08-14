@@ -9,6 +9,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@nbsjs/core": "^6.0.0",
     "nbtify": "^2.2.0"
   }
 }

@@ -4,6 +4,7 @@
     "": {
       "name": "nbs-converter",
       "dependencies": {
+        "@nbsjs/core": "^6.0.0",
         "nbtify": "^2.2.0",
       },
       "devDependencies": {
@@ -15,6 +16,8 @@
     },
   },
   "packages": {
+    "@nbsjs/core": ["@nbsjs/core@6.0.0", "", {}, "sha512-YKJxmTQ9wQqvvx1pDvj8bEZWj8xpotpRT3cOEa5tYvfujZ3hQ+mNXvpfYbQUgMDswAWSNyHNUJqO5xbdKL8TAg=="],
+
     "@types/bun": ["@types/bun@1.2.5", "", { "dependencies": { "bun-types": "1.2.5" } }, "sha512-w2OZTzrZTVtbnJew1pdFmgV99H0/L+Pvw+z1P67HaR18MHOzYnTYOi6qzErhK8HyT+DB782ADVPPE92Xu2/Opg=="],
 
     "@types/node": ["@types/node@22.13.11", "", { "dependencies": { "undici-types": "~6.20.0" } }, "sha512-iEUCUJoU0i3VnrCmgoWCXttklWcvoCIx4jzcP22fioIVSdTmjgoEvmAO/QPw6TcS9k5FrNgn4w7q5lGOd1CT5g=="],
