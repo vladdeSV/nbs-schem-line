@@ -14,113 +14,93 @@ export function processBinaryStreams(
 function splitBinaryStreams(
   streams: Record<InstrumentId, Record<NoteId, Stream>>,
 ): Record<InstrumentId, Record<NoteId, [Stream, Stream]>> {
-  /// ai generated
-  function separateEveryOther(stream: Stream): [Stream, Stream] {
+  const separateEveryOther = (stream: Stream): [Stream, Stream] => {
     const first: Stream = []
     const second: Stream = []
-    for (let i = 0; i < stream.length; ++i) {
-      if (i % 2 === 0) {
-        first.push(stream[i])
+    
+    stream.forEach((value, index) => {
+      if (index % 2 === 0) {
+        first.push(value)
       } else {
-        second.push(stream[i])
+        second.push(value)
       }
+    })
+
+    const removeTrailingFalse = (s: Stream): Stream => {
+      const lastTrueIndex = s.findLastIndex(value => value === true)
+      return lastTrueIndex === -1 ? [] : s.slice(0, lastTrueIndex + 1)
     }
 
-    // remove all trailing false
-    const removeTrailingFalseMutating = (stream: Stream) => {
-      const lastTrueIndex = stream.findLastIndex(value => value === true)
-      stream.length = lastTrueIndex === -1 ? 0 : lastTrueIndex + 1
-    }
-
-    removeTrailingFalseMutating(first)
-    removeTrailingFalseMutating(second)
-
-    return [first, second]
+    return [removeTrailingFalse(first), removeTrailingFalse(second)]
   }
 
-  /// ai generated
-  function padToMultipleOf4Mutating(stream: Stream): void {
+  const padToMultipleOf4 = (stream: Stream): Stream => {
     const remainder = stream.length % 4
     const paddingNeeded = remainder === 0 ? 0 : 4 - remainder
-    for (let i = 0; i < paddingNeeded; i++) {
-      stream.push(false)
-    }
+    return [...stream, ...Array(paddingNeeded).fill(false)]
   }
 
-  const result: Record<InstrumentId, Record<NoteId, [Stream, Stream]>> = {}
-  for (const [instrumentIdAsString, notes] of Object.entries(streams)) {
-    const instrument: InstrumentId = Number(instrumentIdAsString)
-
-    result[instrument] = {}
-    for (const [noteValueAsString, stream] of Object.entries(notes)) {
-      const note: NoteId = Number(noteValueAsString)
-
-      const [left, right] = separateEveryOther(stream)
-      padToMultipleOf4Mutating(left)
-      padToMultipleOf4Mutating(right)
-      result[instrument][note] = [left, right]
-    }
-  }
-
-  return result
+  return Object.fromEntries(
+    Object.entries(streams).map(([instrumentId, notes]) => [
+      Number(instrumentId),
+      Object.fromEntries(
+        Object.entries(notes).map(([noteId, stream]) => {
+          const [left, right] = separateEveryOther(stream)
+          return [
+            Number(noteId),
+            [padToMultipleOf4(left), padToMultipleOf4(right)] as [Stream, Stream]
+          ]
+        })
+      )
+    ])
+  )
 }
 
-/// converts gray code to redstone signal
 export function getReverseGrayCode(value: number): TruthyGrayValue | 0 {
-  for (const [signalStrength, code] of Object.entries(xoliksCode)) {
-    if (value === code) {
-      const ss = Number(signalStrength)
-      if (!isNumberSupportedGrayCode(ss) && ss !== 0) {
-        console.error('signal strength is not a supported number', signalStrength)
-        process.exit(1)
-      }
-
-      return ss
-    }
+  const entry = Object.entries(xoliksCode).find(([, code]) => code === value)
+  
+  if (!entry) {
+    throw new Error(`value does not exist in the reverse lookup: ${value}`)
   }
 
-  console.error('value does not exist in the reverse lookup', value)
-  process.exit(1)
+  const signalStrength = Number(entry[0])
+  
+  if (!isNumberSupportedGrayCode(signalStrength) && signalStrength !== 0) {
+    throw new Error(`signal strength is not a supported number: ${signalStrength}`)
+  }
+
+  return signalStrength
 }
 
 export type GrayCodeStream = number[]
 function processStreams(
-  a: Record<InstrumentId, Record<NoteId, [Stream, Stream]>>,
+  splitStreams: Record<InstrumentId, Record<NoteId, [Stream, Stream]>>,
 ): Record<InstrumentId, Record<NoteId, [GrayCodeStream, GrayCodeStream]>> {
-  function encodeStream(stream: Stream): GrayCodeStream {
-    console.assert(stream.length % 4 === 0, 'stream length is not a multiple of 4', stream.length)
-
+  const encodeStream = (stream: Stream): GrayCodeStream => {
+    if (stream.length % 4 !== 0) {
+      throw new Error(`stream length is not a multiple of 4: ${stream.length}`)
+    }
 
     const grayCodedStream: GrayCodeStream = []
     for (let i = 0; i < stream.length; i += 4) {
-      const byte =
-        ((stream[i] ? 1 : 0) << 3) |
-        ((stream[i + 1] ? 1 : 0) << 2) |
-        ((stream[i + 2] ? 1 : 0) << 1) |
-        (stream[i + 3] ? 1 : 0)
+      const byte = stream.slice(i, i + 4)
+        .reduce((acc, value, index) => acc | ((value ? 1 : 0) << (3 - index)), 0)
 
-      const grayCodedByte = getReverseGrayCode(byte)
-      grayCodedStream.push(grayCodedByte)
+      grayCodedStream.push(getReverseGrayCode(byte))
     }
 
     return grayCodedStream
   }
 
-  const result: Record<InstrumentId, Record<NoteId, [GrayCodeStream, GrayCodeStream]>> = {}
-  for (const [instrumentIdAsString, notes] of Object.entries(a)) {
-    const instrument: InstrumentId = Number(instrumentIdAsString)
-
-    result[instrument] = {}
-    for (const [noteValueAsString, streams] of Object.entries(notes)) {
-      const note: NoteId = Number(noteValueAsString)
-      const [leftStream, rightStream] = streams
-
-      const leftGrayCodedStream = encodeStream(leftStream)
-      const rightGrayCodedStream = encodeStream(rightStream)
-
-      result[instrument][note] = [leftGrayCodedStream, rightGrayCodedStream]
-    }
-  }
-
-  return result
+  return Object.fromEntries(
+    Object.entries(splitStreams).map(([instrumentId, notes]) => [
+      Number(instrumentId),
+      Object.fromEntries(
+        Object.entries(notes).map(([noteId, [leftStream, rightStream]]) => [
+          Number(noteId),
+          [encodeStream(leftStream), encodeStream(rightStream)] as [GrayCodeStream, GrayCodeStream]
+        ])
+      )
+    ])
+  )
 }
