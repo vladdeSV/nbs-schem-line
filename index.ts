@@ -1,11 +1,11 @@
-import { writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { parseInstrumentStreams } from './source/create-schem.ts'
 import { parseNBSFile } from './source/parse-nbs.ts'
 import { processBinaryStreams } from './source/process-binary-stream.ts'
 
 // check if -v flag is passed, if not, set console.log to noop
 if (!process.argv.includes('-v')) {
-  console.log = () => {}
+  console.log = () => { }
 }
 
 // filter out flags
@@ -26,7 +26,8 @@ if (output === undefined) {
 
 const useHelpers = process.argv.includes('--use-helpers')
 
-const notes = parseNBSFile(filepath)
+const nbs = readFileSync(filepath)
+const notes = parseNBSFile(nbs)
 const processed = processBinaryStreams(notes)
 const data: Uint8Array<ArrayBufferLike> = await parseInstrumentStreams(processed, useHelpers)
 
