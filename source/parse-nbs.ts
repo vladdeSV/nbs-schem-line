@@ -1,13 +1,12 @@
-import { readFileSync } from 'node:fs'
+import { fromArrayBuffer, type Song } from '@nbsjs/core'
 
 export type { InstrumentId, Note, NoteId, Stream }
 
-export function parseNBSFile(filepath: string): Record<InstrumentId, Record<NoteId, Stream>> {
-  const nodeBuffer = readFileSync(filepath)
-  const arrayBuffer = nodeBuffer.buffer.slice(nodeBuffer.byteOffset, nodeBuffer.byteOffset + nodeBuffer.byteLength)
+export function parseNBSFile(buffer: Buffer): Record<InstrumentId, Record<NoteId, Stream>> {
+  const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
 
-  const layers = createNoteLayers(arrayBuffer)
-  const streams = convertNoteLayersToBinaryStreams(layers)
+  const song = fromArrayBuffer(arrayBuffer)
+  const streams = convertNBStoStreams(song)
   return streams
 }
 
@@ -20,189 +19,39 @@ interface Note {
   instrument: number
 }
 
-function createNoteLayers(arrayBuffer: ArrayBuffer | SharedArrayBuffer): (Note | undefined)[][] {
-  const view = new DataView(arrayBuffer)
+function convertNBStoStreams(song: Song): Record<InstrumentId, Record<NoteId, Stream>> {
+  console.debug('nbs version:', song.version)
+  console.debug('tick length:', song.getLength())
+  console.debug('layer count:', song.layers.all.length)
+  console.debug('name:', song.name)
+  console.debug('transcription author:', song.author)
+  console.debug('original author:', song.originalAuthor)
+  console.debug('description:', song.description)
+  console.debug('tempo:', song.getTempo())
+  console.debug('time signature:', `${song.timeSignature}/4`)
 
-  let offset = 0
-
-  function byte(): number {
-    const value = view.getInt8(offset)
-    offset += 1
-    return value
-  }
-
-  function ubyte(): number {
-    const value = view.getUint8(offset)
-    offset += 1
-    return value
-  }
-
-  function short(): number {
-    const value = view.getInt16(offset, true)
-    offset += 2
-    return value
-  }
-
-  function integer(): number {
-    const value = view.getInt32(offset, true)
-    offset += 4
-    return value
-  }
-
-  function u32(): number {
-    const value = view.getUint32(offset, true)
-    offset += 4
-    return value
-  }
-
-  function readString(): string {
-    const length = u32()
-    const foo = arrayBuffer.slice(offset, offset + length)
-    const value = new TextDecoder().decode(new Uint8Array(foo))
-    offset += value.length
-    return value
-  }
-
-  if (short() !== 0) {
-    console.error('NOT COMPATIBLE!!')
-    process.exit(1)
-  }
-
-  const NBSVersion = byte()
-  const vanillaInstrumentCount = byte()
-  const songTickLength = short() + 1
-
-  console.log('NBS version:', NBSVersion)
-  console.log('Vanilla intrument count:', vanillaInstrumentCount)
-  console.log('Song tick length:', songTickLength)
-
-  const layerCount = short()
-  console.log('Layer count:', layerCount)
-
-  const songName = readString()
-  console.log('Name:', songName)
-
-  const author = readString()
-  console.log('Author:', author)
-
-  const originalAuthor = readString()
-  console.log('Original author:', originalAuthor)
-
-  const description = readString()
-  console.log('Description:', description)
-
-  const tempo = short()
-  console.log('Tempo:', tempo)
-
-  const autoSave = byte()
-  // console.log('Auto save:', autoSave == 1)
-
-  const autoSaveDuration = byte()
-  // console.log('Auto save duration:', autoSaveDuration)
-
-  const timeSignature = byte()
-  console.log('Time signature:', `${timeSignature}/4`)
-
-  const minutesSpent = integer()
-  // console.log('Minutes spent:', minutesSpent)
-
-  const leftClicks = integer()
-  // console.log('Left clicks:', leftClicks)
-
-  const rightClicks = integer()
-  // console.log('Right clicks:', rightClicks)
-
-  const blocksAdded = integer()
-  // console.log('Blocks added:', blocksAdded)
-
-  const blocksRemoved = integer()
-  // console.log('Blocks removed:', blocksRemoved)
-
-  const midi = readString()
-  // console.log('Midi:', midi)
-
-  const loop = byte()
-  // console.log('Loop:', loop == 1)
-
-  const maxLoops = byte()
-  // console.log('Max loops:', maxLoops == 0 ? 'Infinite' : maxLoops)
-
-  const loopStartTick = short()
-  // console.log('Loop start tick:', loopStartTick)
-
-  // section 2
-  console.log()
-  console.log('--- Second section')
-
-  let currentTick = -1
-
-  const layers: (Note | undefined)[][] = new Array(layerCount)
-  for (let i = 0; i < layerCount; ++i) {
-    layers[i] = new Array(songTickLength)
-  }
-
-  while (true) {
-    // console.log('----------> loop')
-
-    const jumpTicks = short()
-    // console.log('Jump ticks:', jumpTicks)
-
-    if (jumpTicks === 0) {
-      console.log('end of section')
-      break
-    }
-    currentTick += jumpTicks
-    // console.log('(Current tick):', currentTick)
-
-    let layer = -1
-    while (true) {
-      const layerJumps = short()
-      if (layerJumps === 0) {
-        // console.log('end of layer')
-        break
-      }
-      layer += layerJumps
-
-      // console.log('Layer:', layer, '(+' + layerJumps + ')')
-
-      const noteBlockIntstrument = byte()
-      const noteBlockKey = byte()
-      const noteBlockVelocity = byte()
-      const noteBlockPanning = ubyte()
-      const noteBlockPitch = short()
-
-      if (noteBlockIntstrument > 15) {
-        console.warn(`encountered custom instrument (id: ${noteBlockIntstrument}), skipping`)
-        continue
-      }
-
-      layers[layer][currentTick] = {
-        value: noteBlockKey,
-        instrument: noteBlockIntstrument,
-      }
+  // get max tick length by finding the highest tick index across all layers
+  let songTickLength = 0
+  for (const layer of song.layers.all) {
+    const noteTicksAsNumbers = Object.keys(layer.notes.all).map(Number)
+    if (noteTicksAsNumbers.length > 0) {
+      const maxTick = Math.max(...noteTicksAsNumbers)
+      songTickLength = Math.max(songTickLength, maxTick)
     }
   }
-  return layers
-}
+  songTickLength += 1 // convert from 0-based to length
 
-function convertNoteLayersToBinaryStreams(
-  layers: (Note | undefined)[][],
-): Record<InstrumentId, Record<NoteId, Stream>> {
   // get all instruments
   const instruments = new Set<InstrumentId>()
-  for (const layer of layers) {
-    for (const note of layer) {
-      if (note === undefined) {
-        continue
+  for (const layer of song.layers.all) {
+    for (const note of Object.values(layer.notes.all) as any[]) {
+      if (note.instrument <= 15) { // only vanilla instruments
+        instruments.add(note.instrument)
       }
-
-      instruments.add(note.instrument)
     }
   }
 
-  const songTickLength = layers[0]?.length ?? 0
-
-  // create sorted keys for each instrument, later to be used
+  // create sorted keys for each instrument
   const streams: Record<InstrumentId, Record<NoteId, Stream>> = {}
   for (const instrument of [...instruments].sort()) {
     streams[instrument] = {}
@@ -212,20 +61,31 @@ function convertNoteLayersToBinaryStreams(
     }
   }
 
-  for (const layer of layers) {
-    for (const [index, note] of layer.entries()) {
-      if (note === undefined) {
+  // populate streams with notes from all layers
+  for (const layer of song.layers.all) {
+    for (const [tickString, note] of Object.entries(layer.notes.all) as [string, any][]) {
+      const tick = Number(tickString)
+
+      if (note.instrument > 15) {
+        console.warn(`encountered custom instrument (id: ${note.instrument}), skipping`)
         continue
       }
 
-      const shiftedNoteValue = note.value - 33
+      const shiftedNoteValue = note.key - 33
 
       if (shiftedNoteValue < 0 || shiftedNoteValue > 24) {
-        console.error('invalid note value', note.value, '; expected to be between', 0, '-', 24, ' (33-57)')
+        console.error('invalid note value', note.key, '; expected to be between', 33, '-', 57, ' (0-24 shifted)')
         process.exit(1)
       }
 
-      streams[note.instrument][shiftedNoteValue][index] = true
+      if (!streams[note.instrument]) {
+        streams[note.instrument] = {}
+        for (let i = 0; i < 25; ++i) {
+          streams[note.instrument][i] = new Array(songTickLength).fill(false)
+        }
+      }
+
+      streams[note.instrument][shiftedNoteValue][tick] = true
     }
   }
 
@@ -239,23 +99,6 @@ function convertNoteLayersToBinaryStreams(
       }
     }
   }
-
-  /*
-  for (const [instrument, stream] of Object.entries(streams)) {
-    if (stream === undefined) {
-      console.error('instrument not found:', instrument)
-      process.exit(1)
-    }
-
-    console.log('# instrument', instrument)
-
-    for (const [note, bools] of Object.entries(stream)) {
-      const s = bools.map(x => (x ? 'X' : '-')).join('')
-      console.log(`${note}:\t${s}`)
-    }
-    console.log()
-  }
-    */
 
   return streams
 }
