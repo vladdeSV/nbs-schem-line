@@ -67,14 +67,14 @@ function convertNBStoStreams(song: Song): Record<InstrumentId, Record<NoteId, St
       const tick = Number(tickString)
 
       if (note.instrument > 15) {
-        console.warn(`encountered custom instrument (id: ${note.instrument}), skipping`)
+        console.debug(`skipping custom instrument (id: ${note.instrument})`)
         continue
       }
 
       const shiftedNoteValue = note.key - 33
 
       if (shiftedNoteValue < 0 || shiftedNoteValue > 24) {
-        console.error('invalid note value', note.key, '; expected to be between', 33, '-', 57, ' (0-24 shifted)')
+        console.warn(`note key ${note.key} out of expected range, skipping`)
         process.exit(1)
       }
 
