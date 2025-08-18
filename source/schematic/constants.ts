@@ -141,7 +141,6 @@ export const customPaletteBlockIds = {
 
   air: 120,
   noteNotUsedBlockId: 121, // note does not exist at all
-  singleStreamMissingBlockId: 122, // missing one of the two double chests
 
   // custom block heads
   dragon: 130,

@@ -54,12 +54,7 @@ export async function parseInstrumentStreams(input: Record<InstrumentId, Record<
   palette['minecraft:oak_wall_sign[facing=south]'] = new Int32(customPaletteBlockIds.signSouth)
 
   palette['minecraft:air'] = new Int32(customPaletteBlockIds.air)
-  palette['minecraft:blackstone_stairs[facing=south,half=top,shape=straight]'] = new Int32(
-    customPaletteBlockIds.noteNotUsedBlockId,
-  )
-  palette['minecraft:quartz_stairs[facing=south,half=top,shape=straight]'] = new Int32(
-    customPaletteBlockIds.singleStreamMissingBlockId,
-  )
+  palette['minecraft:composter'] = new Int32(customPaletteBlockIds.noteNotUsedBlockId)
   palette['minecraft:dragon_head'] = new Int32(customPaletteBlockIds.dragon)
   palette['minecraft:creeper_head'] = new Int32(customPaletteBlockIds.creeper)
   palette['minecraft:skeleton_skull'] = new Int32(customPaletteBlockIds.skeleton)
@@ -179,15 +174,6 @@ export async function parseInstrumentStreams(input: Record<InstrumentId, Record<
             )
             blockEntities.push(blockEntity)
           }
-        } else {
-          const firstChestCoord = { ...baseCoord, y: baseCoord.y + (VERTICAL_SPACING - 1) }
-          const secondChestCoord = coordinateOffset90DegBasedOnDirection(firstChestCoord, 1, direction)
-
-          const firstChestIndex = coordinateToIndexXZY(firstChestCoord.x, firstChestCoord.z, firstChestCoord.y)
-          const secondChestIndex = coordinateToIndexXZY(secondChestCoord.x, secondChestCoord.z, secondChestCoord.y)
-
-          blockIds[firstChestIndex] = customPaletteBlockIds.singleStreamMissingBlockId
-          blockIds[secondChestIndex] = customPaletteBlockIds.singleStreamMissingBlockId
         }
       }
 
