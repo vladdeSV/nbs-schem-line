@@ -3,13 +3,14 @@
   "module": "parse-nbs.ts",
   "type": "module",
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "^1.2.20"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "5.9.2"
   },
   "dependencies": {
     "@nbsjs/core": "^6.0.0",
+    "@ungap/compression-stream": "^0.2.0",
     "nbtify": "^2.2.0"
   }
 }

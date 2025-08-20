@@ -1,3 +1,4 @@
+import '@ungap/compression-stream/poly'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { parseInstrumentStreams } from './source/create-schem.ts'
 import { parseNBSFile } from './source/parse-nbs.ts'
