@@ -7,7 +7,7 @@ export interface Schem {
 export interface WorldEditSchematic {
   Version: Int32
   DataVersion: Int32
-  Metadata?: { Date: number; WorldEdit: unknown[] }
+  Metadata?: { Date: number; WorldEdit: WorldEditMetadata }
   Width: Int16
   Height: Int16
   Length: Int16
@@ -17,6 +17,13 @@ export interface WorldEditSchematic {
     Data: Int8Array
     BlockEntities: BlockEntity[]
   }
+}
+
+type WorldEditMetadata = {
+  Version: string,
+  EditingPlatform: string,
+  Origin: Int32Array,
+  Platforms: Record<string, { Name: string, Version: string }>
 }
 
 export interface BlockPalette {
