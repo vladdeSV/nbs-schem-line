@@ -2,8 +2,12 @@
   "name": "nbs-converter",
   "module": "parse-nbs.ts",
   "type": "module",
+  "scripts": {
+    "verify": "bun run verify.ts"
+  },
   "devDependencies": {
-    "@types/bun": "^1.2.20"
+    "@types/bun": "^1.2.20",
+    "@types/command-line-args": "^5.2.3"
   },
   "peerDependencies": {
     "typescript": "5.9.2"
@@ -11,6 +15,7 @@
   "dependencies": {
     "@nbsjs/core": "^6.0.0",
     "@ungap/compression-stream": "^0.2.0",
+    "command-line-args": "^6.0.1",
     "nbtify": "^2.2.0"
   }
 }
