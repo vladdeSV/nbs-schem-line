@@ -3,6 +3,10 @@
   "module": "parse-nbs.ts",
   "type": "module",
   "scripts": {
+    "build": "bun run build:windows && bun run build:linux && bun run build:mac",
+    "build:windows": "bun build --compile --target bun-windows-x64 --outfile build/nbs-converter-windows-x64.exe index.ts",
+    "build:linux": "bun build --compile --target bun-linux-x64 --outfile build/nbs-converter-linux-x64 index.ts",
+    "build:mac": "bun build --compile --target bun-darwin-x64 --outfile build/nbs-converter-darwin-x64 index.ts",
     "verify": "bun run verify.ts"
   },
   "devDependencies": {
