@@ -55,6 +55,22 @@ function validateAndAdjustSong(song: Song): Song {
   return createAdjustedSong(song)
 }
 
+function getRoundedTempo(originalTempo: number): number {
+  if (originalTempo >= 20) {
+    return 20 * 2 ** Math.floor((Math.log2(originalTempo / 20)))  // MATH
+  }
+
+  if (originalTempo >= 17) {
+    return 20
+  }
+
+  const factors = [1, 2.22, 2.5, 2.85, 3.33, 4, 5, 6.66, 10]
+  let closestFactor = factors.reduce((prev, curr) => {
+    return Math.abs(curr - originalTempo) < Math.abs(prev - originalTempo) ? curr : prev
+  })
+  return closestFactor
+}
+
 function createAdjustedSong(originalSong: Song): Song {
   const adjustedSong = new SongClass()
 
@@ -67,7 +83,13 @@ function createAdjustedSong(originalSong: Song): Song {
   adjustedSong.setTempo(20)
 
   const originalTempo = originalSong.getTempo()
-  const tempoDelta = (20 / originalTempo) - 1
+  // TODO: implement optional override (don't allow if over 20?)
+  const roundedTempo = getRoundedTempo(originalTempo)
+  const tempoDelta = (20 / roundedTempo) - 1
+  const compressionFactor =  roundedTempo / 20
+  console.debug('roundedTempo:', roundedTempo)
+  console.debug('tempoDelta:', tempoDelta)
+  console.debug('compressionFactor:', compressionFactor)
 
   // process each layer
   for (const originalLayer of originalSong.layers.all) {
@@ -81,6 +103,11 @@ function createAdjustedSong(originalSong: Song): Song {
     // process each note in the layer
     for (const [tickString, note] of Object.entries(originalLayer.notes.all) as [string, any][]) {
       const tick = Number(tickString)
+
+      // skip if compressing and not on a relevant tick
+      if (compressionFactor > 1 && tick % compressionFactor != 0) {
+        continue
+      }
 
       // skip custom instruments
       if (note.instrument > 15) {
@@ -97,7 +124,7 @@ function createAdjustedSong(originalSong: Song): Song {
       }
 
       // adjust timing based on tempo change
-      const adjustedTick = Math.floor(tick + tick * tempoDelta)
+      const adjustedTick = compressionFactor > 1 ? tick / compressionFactor : Math.floor(tick + tick * tempoDelta)
 
       // add adjusted note to the layer
       const adjustedNote = new NBSNote(note.instrument, {
