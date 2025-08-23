@@ -55,20 +55,21 @@ function validateAndAdjustSong(song: Song): Song {
   return createAdjustedSong(song)
 }
 
-function getRoundedTempo(originalTempo: number): number {
-  if (originalTempo >= 20) {
-    return 20 * 2 ** Math.floor((Math.log2(originalTempo / 20)))  // MATH
+function calculateTempoDelta(originalTempo: number, useRounding: boolean): number {
+  let tempoDelta: number
+
+  if (useRounding && originalTempo <= 20) {
+    tempoDelta = Math.floor((20 / originalTempo) + 0.75) - 1
+  }
+  else if (!useRounding && originalTempo <= 20) {
+    tempoDelta = (20 / originalTempo) - 1
+  }
+  else {
+    // force rounding for tempos above 20 no matter what
+    tempoDelta = -(2 ** Math.floor(Math.log2((originalTempo / 20) + 1 - 0.75))) + 1
   }
 
-  if (originalTempo >= 17) {
-    return 20
-  }
-
-  const factors = [1, 2.22, 2.5, 2.85, 3.33, 4, 5, 6.66, 10]
-  let closestFactor = factors.reduce((prev, curr) => {
-    return Math.abs(curr - originalTempo) < Math.abs(prev - originalTempo) ? curr : prev
-  })
-  return closestFactor
+  return tempoDelta
 }
 
 function createAdjustedSong(originalSong: Song): Song {
@@ -84,10 +85,8 @@ function createAdjustedSong(originalSong: Song): Song {
 
   const originalTempo = originalSong.getTempo()
   // TODO: implement optional override (don't allow if over 20?)
-  const roundedTempo = getRoundedTempo(originalTempo)
-  const tempoDelta = (20 / roundedTempo) - 1
-  const compressionFactor =  roundedTempo / 20
-  console.debug('roundedTempo:', roundedTempo)
+  const tempoDelta = calculateTempoDelta(originalTempo, true)
+  const compressionFactor = tempoDelta < 0 ? -tempoDelta + 1 : 0
   console.debug('tempoDelta:', tempoDelta)
   console.debug('compressionFactor:', compressionFactor)
 
@@ -105,7 +104,7 @@ function createAdjustedSong(originalSong: Song): Song {
       const tick = Number(tickString)
 
       // skip if compressing and not on a relevant tick
-      if (compressionFactor > 1 && tick % compressionFactor != 0) {
+      if (compressionFactor > 0 && tick % compressionFactor != 0) {
         continue
       }
 
@@ -124,7 +123,7 @@ function createAdjustedSong(originalSong: Song): Song {
       }
 
       // adjust timing based on tempo change
-      const adjustedTick = compressionFactor > 1 ? tick / compressionFactor : Math.floor(tick + tick * tempoDelta)
+      const adjustedTick = compressionFactor > 0 ? tick / compressionFactor : Math.floor(tick + tick * tempoDelta)
 
       // add adjusted note to the layer
       const adjustedNote = new NBSNote(note.instrument, {
