@@ -55,6 +55,21 @@ function validateAndAdjustSong(song: Song): Song {
   return createAdjustedSong(song)
 }
 
+function calculateTempoDelta(originalTempo: number, useRounding: boolean = true): number {
+  const roundingCutoff = 0.75
+
+  if (originalTempo <= 20) {
+    if (useRounding) {
+      return Math.floor((20 / originalTempo) + roundingCutoff) - 1
+    }
+
+    return (20 / originalTempo) - 1
+  }
+
+  // force rounding for tempos above 20 no matter what
+  return -(2 ** Math.floor(Math.log2(originalTempo / (20 * (1 + roundingCutoff))) + 1)) + 1
+}
+
 function createAdjustedSong(originalSong: Song): Song {
   const adjustedSong = new SongClass()
 
@@ -67,7 +82,11 @@ function createAdjustedSong(originalSong: Song): Song {
   adjustedSong.setTempo(20)
 
   const originalTempo = originalSong.getTempo()
-  const tempoDelta = (20 / originalTempo) - 1
+  // TODO: implement optional override (don't allow if over 20?)
+  const tempoDelta = calculateTempoDelta(originalTempo)
+  const compressionFactor = tempoDelta < 0 ? -tempoDelta + 1 : 0
+  console.debug('tempoDelta:', tempoDelta)
+  console.debug('compressionFactor:', compressionFactor)
 
   // process each layer
   for (const originalLayer of originalSong.layers.all) {
@@ -81,6 +100,11 @@ function createAdjustedSong(originalSong: Song): Song {
     // process each note in the layer
     for (const [tickString, note] of Object.entries(originalLayer.notes.all) as [string, any][]) {
       const tick = Number(tickString)
+
+      // skip if compressing and not on a relevant tick
+      if (compressionFactor > 0 && tick % compressionFactor != 0) {
+        continue
+      }
 
       // skip custom instruments
       if (note.instrument > 15) {
@@ -97,7 +121,7 @@ function createAdjustedSong(originalSong: Song): Song {
       }
 
       // adjust timing based on tempo change
-      const adjustedTick = Math.floor(tick + tick * tempoDelta)
+      const adjustedTick = compressionFactor > 0 ? tick / compressionFactor : Math.floor(tick + tick * tempoDelta)
 
       // add adjusted note to the layer
       const adjustedNote = new NBSNote(note.instrument, {
