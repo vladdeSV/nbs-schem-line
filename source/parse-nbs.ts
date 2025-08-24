@@ -55,22 +55,19 @@ function validateAndAdjustSong(song: Song): Song {
   return createAdjustedSong(song)
 }
 
-function calculateTempoDelta(originalTempo: number, useRounding: boolean): number {
-  let tempoDelta: number
+function calculateTempoDelta(originalTempo: number, useRounding: boolean = true): number {
   const roundingCutoff = 0.75
 
-  if (useRounding && originalTempo <= 20) {
-    tempoDelta = Math.floor((20 / originalTempo) + roundingCutoff) - 1
-  }
-  else if (!useRounding && originalTempo <= 20) {
-    tempoDelta = (20 / originalTempo) - 1
-  }
-  else {
-    // force rounding for tempos above 20 no matter what
-    tempoDelta = -(2 ** Math.floor(Math.log2(originalTempo / (20 * (1 + roundingCutoff))) + 1)) + 1
+  if (originalTempo <= 20) {
+    if (useRounding) {
+      return Math.floor((20 / originalTempo) + roundingCutoff) - 1
+    }
+
+    return (20 / originalTempo) - 1
   }
 
-  return tempoDelta
+  // force rounding for tempos above 20 no matter what
+  return -(2 ** Math.floor(Math.log2(originalTempo / (20 * (1 + roundingCutoff))) + 1)) + 1
 }
 
 function createAdjustedSong(originalSong: Song): Song {
@@ -86,7 +83,7 @@ function createAdjustedSong(originalSong: Song): Song {
 
   const originalTempo = originalSong.getTempo()
   // TODO: implement optional override (don't allow if over 20?)
-  const tempoDelta = calculateTempoDelta(originalTempo, true)
+  const tempoDelta = calculateTempoDelta(originalTempo)
   const compressionFactor = tempoDelta < 0 ? -tempoDelta + 1 : 0
   console.debug('tempoDelta:', tempoDelta)
   console.debug('compressionFactor:', compressionFactor)
