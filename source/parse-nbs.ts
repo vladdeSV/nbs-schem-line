@@ -57,16 +57,17 @@ function validateAndAdjustSong(song: Song): Song {
 
 function calculateTempoDelta(originalTempo: number, useRounding: boolean): number {
   let tempoDelta: number
+  const roundingCutoff = 0.75
 
   if (useRounding && originalTempo <= 20) {
-    tempoDelta = Math.floor((20 / originalTempo) + 0.75) - 1
+    tempoDelta = Math.floor((20 / originalTempo) + roundingCutoff) - 1
   }
   else if (!useRounding && originalTempo <= 20) {
     tempoDelta = (20 / originalTempo) - 1
   }
   else {
     // force rounding for tempos above 20 no matter what
-    tempoDelta = -(2 ** Math.floor(Math.log2((originalTempo / 20) + 1 - 0.75))) + 1
+    tempoDelta = -(2 ** Math.floor(Math.log2(originalTempo / (20 * (1 + roundingCutoff))) + 1)) + 1
   }
 
   return tempoDelta
