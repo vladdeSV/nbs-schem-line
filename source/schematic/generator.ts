@@ -12,7 +12,7 @@ import {
 import {
   coordinateOffset,
   coordinateOffset90DegBasedOnDirection,
-  createAccessIndexFunctionXZY,
+  createAccessIndexFunction,
   getInRegionCoordinates,
   getLocalCoordinates,
   rotateDirectionQuarterClockwise,
@@ -32,7 +32,7 @@ export async function parseInstrumentStreams(input: Record<InstrumentId, Record<
   const depth = width
   const height = discReaderLayout.length * VERTICAL_SPACING
 
-  const coordinateToIndexXZY = createAccessIndexFunctionXZY(width, depth, height)
+  const coordinateToIndex = createAccessIndexFunction(width, height, depth)
 
   const palette: BlockPalette = {}
   for (const [instrumentId, blockName] of Object.entries(instrumentBlockIds)) {
@@ -78,8 +78,8 @@ export async function parseInstrumentStreams(input: Record<InstrumentId, Record<
     const chestLookingDirection = rotateDirectionQuarterClockwise(direction, 3)
     const secondCoord = coordinateOffset90DegBasedOnDirection(newBaseCoord, 1, chestLookingDirection)
 
-    const a = coordinateToIndexXZY(newBaseCoord.x, newBaseCoord.z, newBaseCoord.y)
-    const b = coordinateToIndexXZY(secondCoord.x, secondCoord.z, secondCoord.y)
+    const a = coordinateToIndex(newBaseCoord.x, newBaseCoord.y, newBaseCoord.z)
+    const b = coordinateToIndex(secondCoord.x, secondCoord.y, secondCoord.z)
 
     blockIds[a] = getChestPaletteId('right', chestLookingDirection)
     blockIds[b] = getChestPaletteId('left', chestLookingDirection)
@@ -104,7 +104,7 @@ export async function parseInstrumentStreams(input: Record<InstrumentId, Record<
     for (let i = 0; i < 4; ++i) {
       const rotatedDirection = rotateDirectionQuarterClockwise(localCoords.direction, 1)
       const oc = coordinateOffset(inRegionCoords, rotatedDirection, i)
-      const coordIndex = coordinateToIndexXZY(oc.x, oc.z, oc.y + (VERTICAL_SPACING - 1))
+      const coordIndex = coordinateToIndex(oc.x, oc.y + (VERTICAL_SPACING - 1), oc.z)
       blockIds[coordIndex] = customPaletteBlockIds.noteNotUsedBlockId
     }
   }
@@ -124,8 +124,8 @@ export async function parseInstrumentStreams(input: Record<InstrumentId, Record<
           const firstChestCoord = { ...baseCoord, y: baseCoord.y + (VERTICAL_SPACING - 1) }
           const secondChestCoord = coordinateOffset90DegBasedOnDirection(firstChestCoord, 1, direction)
 
-          const firstChestIndex = coordinateToIndexXZY(firstChestCoord.x, firstChestCoord.z, firstChestCoord.y)
-          const secondChestIndex = coordinateToIndexXZY(secondChestCoord.x, secondChestCoord.z, secondChestCoord.y)
+          const firstChestIndex = coordinateToIndex(firstChestCoord.x, firstChestCoord.y, firstChestCoord.z)
+          const secondChestIndex = coordinateToIndex(secondChestCoord.x, secondChestCoord.y, secondChestCoord.z)
 
           // minecraft's chest types are backwards from our coordinate system:
           // our "first" chest (offset 0) becomes minecraft's "right" type

@@ -4,17 +4,17 @@ import { discReaderLayout, discReaderLayoutMaxWidth } from './layout.ts'
 import type { Direction, Section } from './types.ts'
 
 /// when accessing a block in 3D space, how do we get its position in a 1D array?
-/// this converts (x,z,y) coordinates to what i call a "linearized index" – a single number that points to the same spot in a flattened array
-export function createAccessIndexFunctionXZY(
+/// this converts (x,y,z) coordinates to what i call a "linearized index" – a single number that points to the same spot in a flattened array
+export function createAccessIndexFunction(
   w: number,
-  d: number,
   h: number,
-): (x: number, z: number, y: number) => number {
-  return (x: number, z: number, y: number): number => {
+  d: number,
+): (x: number, y: number, z: number) => number {
+  return (x: number, y: number, z: number): number => {
     const result = x + w * z + y * w * d
 
     if (result < 0 || result >= w * d * h) {
-      throw `accessing "out-of-bounds": ${result} (${x}, ${z}, ${y} in ${w}×${d}×${h})`
+      throw `accessing "out-of-bounds": ${result} (${x}, ${y}, ${z} in ${w}×${h}×${d})`
     }
 
     return result
