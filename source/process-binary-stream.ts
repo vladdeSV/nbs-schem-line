@@ -27,7 +27,7 @@ function splitBinaryStreams(
     })
 
     const removeTrailingFalse = (s: Stream): Stream => {
-      const lastTrueIndex = s.findLastIndex(value => value === true)
+      const lastTrueIndex = s.lastIndexOf(true)
       return lastTrueIndex === -1 ? [] : s.slice(0, lastTrueIndex + 1)
     }
 

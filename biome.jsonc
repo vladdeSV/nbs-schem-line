@@ -8,6 +8,11 @@
       "lineWidth": 120
     }
   },
+  "json": {
+    "formatter": {
+      "indentStyle": "space"
+    }
+  },
   "linter": {
     "rules": {
       "style": {

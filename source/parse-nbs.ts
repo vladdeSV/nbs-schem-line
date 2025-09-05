@@ -25,11 +25,13 @@ const instrumentMaxValue = 57
 
 function validateAndAdjustSong(song: Song): Song {
   const outOfRangeNotes = song.layers.all.some(layer =>
-    Object.values(layer.notes.all).some((note: any) => note.key < intrumentMinValue || note.key > instrumentMaxValue),
+    Object.values(layer.notes.all).some(
+      (note: NBSNote) => note.key < intrumentMinValue || note.key > instrumentMaxValue,
+    ),
   )
 
   const hasCustomInstruments = song.layers.all.some(layer =>
-    Object.values(layer.notes.all).some((note: any) => note.instrument > 15),
+    Object.values(layer.notes.all).some((note: NBSNote) => note.instrument > 15),
   )
 
   const hasIllegalTempo = song.getTempo() !== 20
@@ -96,11 +98,11 @@ function createAdjustedSong(originalSong: Song): Song {
     adjustedLayer.isSolo = originalLayer.isSolo
 
     // process each note in the layer
-    for (const [tickString, note] of Object.entries(originalLayer.notes.all) as [string, any][]) {
+    for (const [tickString, note] of Object.entries(originalLayer.notes.all) as [string, NBSNote][]) {
       const tick = Number(tickString)
 
       // skip if compressing and not on a relevant tick
-      if (compressionFactor > 0 && tick % compressionFactor != 0) {
+      if (compressionFactor > 0 && tick % compressionFactor !== 0) {
         continue
       }
 
@@ -160,7 +162,7 @@ function convertNBStoStreams(song: Song): Record<InstrumentId, Record<NoteId, St
   // get all instruments
   const instruments = new Set<InstrumentId>()
   for (const layer of song.layers.all) {
-    for (const note of Object.values(layer.notes.all) as any[]) {
+    for (const note of Object.values(layer.notes.all) as NBSNote[]) {
       if (note.instrument <= 15) {
         // only vanilla instruments
         instruments.add(note.instrument)
@@ -180,7 +182,7 @@ function convertNBStoStreams(song: Song): Record<InstrumentId, Record<NoteId, St
 
   // populate streams with notes from all layers
   for (const layer of song.layers.all) {
-    for (const [tickString, note] of Object.entries(layer.notes.all) as [string, any][]) {
+    for (const [tickString, note] of Object.entries(layer.notes.all) as [string, NBSNote][]) {
       const tick = Number(tickString)
 
       if (note.instrument > 15) {
@@ -215,15 +217,16 @@ function convertNBStoStreams(song: Song): Record<InstrumentId, Record<NoteId, St
   // remove empty streams
   for (const [instrumentIdAsString, notes] of Object.entries(streams)) {
     const instrument: InstrumentId = Number(instrumentIdAsString)
-    if (isNaN(instrument)) {
+    if (Number.isNaN(instrument)) {
       console.warn(`invalid instrument id: ${instrumentIdAsString}, removing`)
+      // biome-ignore lint/suspicious/noExplicitAny: it's supposed to be a number, but if it's not, then wth?
       delete streams[instrumentIdAsString as any]
       continue
     }
     if (notes && streams[instrument]) {
       for (const [noteValueAsString, stream] of Object.entries(notes)) {
         const note: NoteId = Number(noteValueAsString)
-        if (stream && stream.every(x => x === false)) {
+        if (stream?.every(x => x === false)) {
           delete streams[instrument][note]
         }
       }

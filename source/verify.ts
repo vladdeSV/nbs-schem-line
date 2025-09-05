@@ -1,7 +1,7 @@
 import '@ungap/compression-stream/poly'
 import commandLineArgs from 'command-line-args'
 import { read } from 'nbtify'
-import type { BlockEntity, Schem } from './source/schematic/types'
+import type { BlockEntity, Schem } from './schematic/types'
 
 const optionDefinitions = [
   { name: 'help', type: Boolean },
@@ -119,15 +119,20 @@ for (const source of options.src) {
   const invalidDroppers = schem.Blocks.BlockEntities.filter(isDropperWithInvalidItems)
   const invalidHoppers = schem.Blocks.BlockEntities.filter(isHopperWithInvalidItems)
 
+  if (schem.Metadata === undefined) {
+    console.error('missing Metadata in schematic (?)')
+    throw 'invalid schem'
+  }
+
   for (const invalidDropper of invalidDroppers) {
-    const worldCoords = getWorldCoordinates(schem.Metadata!.WorldEdit.Origin, schem.Offset, invalidDropper.Pos)
+    const worldCoords = getWorldCoordinates(schem.Metadata.WorldEdit.Origin, schem.Offset, invalidDropper.Pos)
     console.error(
       `${`found dropper at /tp ${worldCoords[0]} ${worldCoords[1] - 1} ${worldCoords[2]}:`.padEnd(36, ' ')} ${invalidDropper.Data.Items?.map(x => (x.count.valueOf() === 1 ? `${x.id}` : `${x.count} × ${x.id}`)).join(', ')}`,
     )
   }
 
   for (const invalidHopper of invalidHoppers) {
-    const worldCoords = getWorldCoordinates(schem.Metadata!.WorldEdit.Origin, schem.Offset, invalidHopper.Pos)
+    const worldCoords = getWorldCoordinates(schem.Metadata.WorldEdit.Origin, schem.Offset, invalidHopper.Pos)
     console.error(
       `${`found hopper at /tp ${worldCoords[0]} ${worldCoords[1] - 1} ${worldCoords[2]}:`.padEnd(36, ' ')} ${invalidHopper.Data.Items?.map(x => (x.count.valueOf() === 1 ? `${x.id}` : `${x.count} × ${x.id}`)).join(', ')}`,
     )
