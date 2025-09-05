@@ -10,6 +10,7 @@
     "verify": "bun run verify.ts"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.2.3",
     "@types/bun": "^1.2.20",
     "@types/command-line-args": "^5.2.3"
   },

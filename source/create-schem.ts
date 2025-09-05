@@ -1,1 +1,1 @@
-export { parseInstrumentStreams, findInstrumentPositions, instrumentBlockIds } from './schematic/generator.ts'
+export { findInstrumentPositions, instrumentBlockIds, parseInstrumentStreams } from './schematic/generator.ts'
