@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/complexity/useSimpleNumberKeys: it makes it much easier to reason with -vladde */
 import type { InstrumentId } from '../parse-nbs'
 import type { Direction, Section } from './types.ts'
 
@@ -147,7 +148,6 @@ export const customPaletteBlockIds = {
   creeper: 131,
   skeleton: 132,
   zombie: 133,
-
 } as const
 
 export function getChestPaletteId(side: 'left' | 'right', direction: Direction): number {

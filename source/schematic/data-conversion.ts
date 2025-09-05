@@ -1,4 +1,4 @@
-import { Int32, Int8 } from 'nbtify'
+import { Int8, Int32 } from 'nbtify'
 import type { GrayCodeStream } from '../process-binary-stream.ts'
 import { signalStrengthToDiscName, woolBlockIds } from './constants.ts'
 import type { BlockEntityData, ItemComponent } from './types.ts'
@@ -19,13 +19,13 @@ export function isNumberSupportedGrayCode(value: unknown): value is TruthyGrayVa
 
 type ItemSlotRepresentation =
   | {
-    type: 'disc'
-    signal: TruthyGrayValue
-  }
+      type: 'disc'
+      signal: TruthyGrayValue
+    }
   | {
-    type: 'pause'
-    count: number
-  }
+      type: 'pause'
+      count: number
+    }
 
 /// takes a stream of gray coded numbers, and converts it into a psedudo-item slot representation
 /// if there are pauses, it ensures every pause is maximum of 64 items
@@ -61,7 +61,10 @@ function streamToItemRepresentation(stream: GrayCodeStream): ItemSlotRepresentat
   const numStacksInLastShulker = itemSlots.length % 27
   if (numStacksInLastShulker < minimumAmountOfItems) {
     const lastShulkerItems = itemSlots.slice(-numStacksInLastShulker)
-    const itemCount = lastShulkerItems.reduce((prev, current) => current.type === 'pause' ? prev + current.count : prev + 1, 0)
+    const itemCount = lastShulkerItems.reduce(
+      (prev, current) => (current.type === 'pause' ? prev + current.count : prev + 1),
+      0,
+    )
     if (itemCount < minimumAmountOfItems) {
       itemSlots.push({ type: 'pause', count: minimumAmountOfItems - itemCount })
     }

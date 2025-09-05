@@ -2,12 +2,12 @@ import { Int16, Int32, NBTData, write } from 'nbtify'
 import type { InstrumentId, NoteId } from '../parse-nbs'
 import type { GrayCodeStream } from '../process-binary-stream'
 import {
-  GLOBAL_Y_OFFSET,
-  VERTICAL_SPACING,
-  WALL_DISTANCE,
   customPaletteBlockIds,
+  GLOBAL_Y_OFFSET,
   getChestPaletteId,
   instrumentBlockIds,
+  VERTICAL_SPACING,
+  WALL_DISTANCE,
 } from './constants.ts'
 import {
   coordinateOffset,
@@ -24,7 +24,9 @@ import type { BlockEntity, BlockEntityData, BlockPalette, Direction, Schem, Worl
 export { instrumentBlockIds } from './constants.ts'
 export { findInstrumentPositions, getLocalCoordinates } from './coordinates.ts'
 
-export async function parseInstrumentStreams(input: Record<InstrumentId, Record<NoteId, [GrayCodeStream, GrayCodeStream]>>): Promise<Uint8Array> {
+export async function parseInstrumentStreams(
+  input: Record<InstrumentId, Record<NoteId, [GrayCodeStream, GrayCodeStream]>>,
+): Promise<Uint8Array> {
   const centerBlock = 1
   const extraOuterSpacing = 1
 

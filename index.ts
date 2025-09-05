@@ -6,7 +6,7 @@ import { processBinaryStreams } from './source/process-binary-stream.ts'
 
 // check if -v flag is passed, if not, set console.log to noop
 if (!process.argv.includes('-v')) {
-  console.debug = () => { }
+  console.debug = () => {}
 }
 
 // filter out flags

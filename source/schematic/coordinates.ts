@@ -1,5 +1,5 @@
 import type { InstrumentId, NoteId } from '../parse-nbs'
-import { VERTICAL_SPACING, WALL_DISTANCE, directionSectionToInstrument, instrumentBlockIds } from './constants.ts'
+import { directionSectionToInstrument, instrumentBlockIds, VERTICAL_SPACING, WALL_DISTANCE } from './constants.ts'
 import { discReaderLayout, discReaderLayoutMaxWidth } from './layout.ts'
 import type { Direction, Section } from './types.ts'
 
@@ -93,9 +93,12 @@ export function getInRegionCoordinates(
   const spaghettiExtraSpacing = 1 // for the extra spacing when eptying chests :sob:
 
   // in order to "center" each wall, we figure out how many blocks should each section should be padded with
-  const adjustedX = localX * 4 + (WALL_DISTANCE - 4 * Math.floor(discReaderLayoutMaxWidth / 2)) + spaghettiExtraSpacing
-    + ((direction === 'south' || direction === 'west') ? -2 : 0) // mamma mia, sphagettiria
-    - 4 // last second change with our decodes, just putthing this here
+  const adjustedX =
+    localX * 4 +
+    (WALL_DISTANCE - 4 * Math.floor(discReaderLayoutMaxWidth / 2)) +
+    spaghettiExtraSpacing +
+    (direction === 'south' || direction === 'west' ? -2 : 0) - // mamma mia, sphagettiria
+    4 // last second change with our decodes, just putthing this here
   // also: because our region width and depth is odd-numbered, the whole thing will be techincally off-centered by 1 block
 
   // our local y has y=0 at the top, but world space needs y=0 at the bottom (so we flip it)

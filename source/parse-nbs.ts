@@ -25,13 +25,11 @@ const instrumentMaxValue = 57
 
 function validateAndAdjustSong(song: Song): Song {
   const outOfRangeNotes = song.layers.all.some(layer =>
-    Object.values(layer.notes.all).some((note: any) =>
-      note.key < intrumentMinValue || note.key > instrumentMaxValue
-    )
+    Object.values(layer.notes.all).some((note: any) => note.key < intrumentMinValue || note.key > instrumentMaxValue),
   )
 
   const hasCustomInstruments = song.layers.all.some(layer =>
-    Object.values(layer.notes.all).some((note: any) => note.instrument > 15)
+    Object.values(layer.notes.all).some((note: any) => note.instrument > 15),
   )
 
   const hasIllegalTempo = song.getTempo() !== 20
@@ -60,10 +58,10 @@ function calculateTempoDelta(originalTempo: number, useRounding: boolean = true)
 
   if (originalTempo <= 20) {
     if (useRounding) {
-      return Math.floor((20 / originalTempo) + roundingCutoff) - 1
+      return Math.floor(20 / originalTempo + roundingCutoff) - 1
     }
 
-    return (20 / originalTempo) - 1
+    return 20 / originalTempo - 1
   }
 
   // force rounding for tempos above 20 no matter what
@@ -128,7 +126,7 @@ function createAdjustedSong(originalSong: Song): Song {
         key: adjustedKey,
         velocity: note.velocity,
         panning: note.panning,
-        pitch: note.pitch
+        pitch: note.pitch,
       })
       adjustedLayer.notes.add(adjustedTick, adjustedNote)
     }
@@ -163,7 +161,8 @@ function convertNBStoStreams(song: Song): Record<InstrumentId, Record<NoteId, St
   const instruments = new Set<InstrumentId>()
   for (const layer of song.layers.all) {
     for (const note of Object.values(layer.notes.all) as any[]) {
-      if (note.instrument <= 15) { // only vanilla instruments
+      if (note.instrument <= 15) {
+        // only vanilla instruments
         instruments.add(note.instrument)
       }
     }

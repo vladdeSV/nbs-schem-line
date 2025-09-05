@@ -1,4 +1,4 @@
-import type { Int16, Int32, Int8 } from 'nbtify'
+import type { Int8, Int16, Int32 } from 'nbtify'
 
 export interface Schem {
   Schematic: WorldEditSchematic
@@ -20,10 +20,10 @@ export interface WorldEditSchematic {
 }
 
 type WorldEditMetadata = {
-  Version: string,
-  EditingPlatform: string,
-  Origin: Int32Array,
-  Platforms: Record<string, { Name: string, Version: string }>
+  Version: string
+  EditingPlatform: string
+  Origin: Int32Array
+  Platforms: Record<string, { Name: string; Version: string }>
 }
 
 export interface BlockPalette {

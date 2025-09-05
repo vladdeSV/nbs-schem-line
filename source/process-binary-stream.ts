@@ -17,7 +17,7 @@ function splitBinaryStreams(
   const separateEveryOther = (stream: Stream): [Stream, Stream] => {
     const first: Stream = []
     const second: Stream = []
-    
+
     stream.forEach((value, index) => {
       if (index % 2 === 0) {
         first.push(value)
@@ -46,25 +46,22 @@ function splitBinaryStreams(
       Object.fromEntries(
         Object.entries(notes).map(([noteId, stream]) => {
           const [left, right] = separateEveryOther(stream)
-          return [
-            Number(noteId),
-            [padToMultipleOf4(left), padToMultipleOf4(right)] as [Stream, Stream]
-          ]
-        })
-      )
-    ])
+          return [Number(noteId), [padToMultipleOf4(left), padToMultipleOf4(right)] as [Stream, Stream]]
+        }),
+      ),
+    ]),
   )
 }
 
 export function getReverseGrayCode(value: number): TruthyGrayValue | 0 {
   const entry = Object.entries(xoliksCode).find(([, code]) => code === value)
-  
+
   if (!entry) {
     throw `value does not exist in the reverse lookup: ${value}`
   }
 
   const signalStrength = Number(entry[0])
-  
+
   if (!isNumberSupportedGrayCode(signalStrength) && signalStrength !== 0) {
     throw `signal strength is not a supported number: ${signalStrength}`
   }
@@ -83,8 +80,7 @@ function processStreams(
 
     const grayCodedStream: GrayCodeStream = []
     for (let i = 0; i < stream.length; i += 4) {
-      const byte = stream.slice(i, i + 4)
-        .reduce((acc, value, index) => acc | ((value ? 1 : 0) << (3 - index)), 0)
+      const byte = stream.slice(i, i + 4).reduce((acc, value, index) => acc | ((value ? 1 : 0) << (3 - index)), 0)
 
       grayCodedStream.push(getReverseGrayCode(byte))
     }
@@ -98,9 +94,9 @@ function processStreams(
       Object.fromEntries(
         Object.entries(notes).map(([noteId, [leftStream, rightStream]]) => [
           Number(noteId),
-          [encodeStream(leftStream), encodeStream(rightStream)] as [GrayCodeStream, GrayCodeStream]
-        ])
-      )
-    ])
+          [encodeStream(leftStream), encodeStream(rightStream)] as [GrayCodeStream, GrayCodeStream],
+        ]),
+      ),
+    ]),
   )
 }

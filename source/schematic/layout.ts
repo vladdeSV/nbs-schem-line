@@ -1,4 +1,3 @@
-
 export const discReaderLayout: string[][] = (() => {
   const csvContent = `
    ,   ,A24,   ,A21,   ,A18,   ,A22,   ,A23,   ,   ,   
@@ -64,7 +63,6 @@ E18,E14,C14,C10,C12,C04,C06,C03,C11,C05,C15,C09,D19,D15
   if (percussionCount !== 25) {
     throw `percussion sections (D+E) must contain exactly 25 entries total, found ${percussionCount}`
   }
-
 
   // total should be 100 (3 full instruments × 25 + 1 half instrument × 25 = 75 + 25 = 10)
   let expectedTotal = 100

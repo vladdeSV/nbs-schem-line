@@ -10,17 +10,16 @@ const optionDefinitions = [
 const options = commandLineArgs(optionDefinitions)
 
 if (options.help) {
-
-  console.info('verify schematic does not include clogged hoppers or droppers\n\nsynopsis\n  $ bun run verify.ts a1.schem a2.schem ... an.schem')
+  console.info(
+    'verify schematic does not include clogged hoppers or droppers\n\nsynopsis\n  $ bun run verify.ts a1.schem a2.schem ... an.schem',
+  )
 
   process.exit(0)
 }
 
-function assumeIsWorldEditSchematic(data: unknown): asserts data is Schem {
-}
+function assumeIsWorldEditSchematic(data: unknown): asserts data is Schem {}
 
 for (const source of options.src) {
-
   const r = Bun.file(source)
   const a = await read(r)
   const d = a.data
@@ -32,7 +31,11 @@ for (const source of options.src) {
   console.info()
   console.info(`verifying ${source}, size ${schem.Width} × ${schem.Height} × ${schem.Length}`)
 
-  function getWorldCoordinates(origin: Int32Array, offset: Int32Array, inRegionCoords: Int32Array): [number, number, number] {
+  function getWorldCoordinates(
+    origin: Int32Array,
+    offset: Int32Array,
+    inRegionCoords: Int32Array,
+  ): [number, number, number] {
     const x = origin[0] + offset[0] + inRegionCoords[0]
     const y = origin[1] + offset[1] + inRegionCoords[1]
     const z = origin[2] + offset[2] + inRegionCoords[2]
@@ -102,7 +105,10 @@ for (const source of options.src) {
     // some hoppers might contain either one shovel or one one shulker, this is fine
     if (be.Data.Items.length === 1) {
       const item = be.Data.Items[0]
-      if ((item.id === 'minecraft:wooden_shovel' || item.id === 'minecraft:shulker_box') && item.count.valueOf() === 1) {
+      if (
+        (item.id === 'minecraft:wooden_shovel' || item.id === 'minecraft:shulker_box') &&
+        item.count.valueOf() === 1
+      ) {
         return false
       }
     }
@@ -115,12 +121,16 @@ for (const source of options.src) {
 
   for (const invalidDropper of invalidDroppers) {
     const worldCoords = getWorldCoordinates(schem.Metadata!.WorldEdit.Origin, schem.Offset, invalidDropper.Pos)
-    console.error(`${`found dropper at /tp ${worldCoords[0]} ${worldCoords[1] - 1} ${worldCoords[2]}:`.padEnd(36, ' ')} ${invalidDropper.Data.Items?.map(x => x.count.valueOf() === 1 ? `${x.id}` : `${x.count} × ${x.id}`).join(', ')}`)
+    console.error(
+      `${`found dropper at /tp ${worldCoords[0]} ${worldCoords[1] - 1} ${worldCoords[2]}:`.padEnd(36, ' ')} ${invalidDropper.Data.Items?.map(x => (x.count.valueOf() === 1 ? `${x.id}` : `${x.count} × ${x.id}`)).join(', ')}`,
+    )
   }
 
   for (const invalidHopper of invalidHoppers) {
     const worldCoords = getWorldCoordinates(schem.Metadata!.WorldEdit.Origin, schem.Offset, invalidHopper.Pos)
-    console.error(`${`found hopper at /tp ${worldCoords[0]} ${worldCoords[1] - 1} ${worldCoords[2]}:`.padEnd(36, ' ')} ${invalidHopper.Data.Items?.map(x => x.count.valueOf() === 1 ? `${x.id}` : `${x.count} × ${x.id}`).join(', ')}`)
+    console.error(
+      `${`found hopper at /tp ${worldCoords[0]} ${worldCoords[1] - 1} ${worldCoords[2]}:`.padEnd(36, ' ')} ${invalidHopper.Data.Items?.map(x => (x.count.valueOf() === 1 ? `${x.id}` : `${x.count} × ${x.id}`)).join(', ')}`,
+    )
   }
 
   if (invalidDroppers.length === 0 && invalidHoppers.length === 0) {
