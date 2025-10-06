@@ -33,13 +33,13 @@ The converter creates timing streams for Minecraft's music system:
 ### Running the Converter
 ```bash
 # Basic usage with verbose output
-node --no-warnings index.ts -v 'input.nbs'
+bun index.ts -v 'input.nbs'
 
 # With custom output filename
-node --no-warnings index.ts -v 'input.nbs' output.schem
+bun index.ts -v 'input.nbs' output.schem
 
 # With helper blocks and signs to denote instrument and pitch
-node --no-warnings index.ts -v 'input.nbs' output.schem --use-helpers
+bun index.ts -v 'input.nbs' output.schem --use-helpers
 ```
 
 ### Code Quality
@@ -53,7 +53,7 @@ The project uses Biome for formatting and linting:
 
 ## Requirements
 
-- Node.js v23 (required for experimental TypeScript support)
+- Bun (JavaScript runtime with native TypeScript support)
 - Uses `nbtify` library for NBT file manipulation
 
 ## Code Architecture
@@ -72,4 +72,4 @@ The conversion pipeline transforms musical timing (NBS ticks) into Minecraft gam
 
 ## Test Commands
 
-- To ensure the code works, run `node --no-warnings --trace-uncaught index.ts 'megalovania.nbs' .ai-test.schem`
+- To ensure the code works, run `bun index.ts 'megalovania.nbs' .ai-test.schem`

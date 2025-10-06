@@ -13,6 +13,30 @@
       "indentStyle": "space"
     }
   },
+  "html": {
+    "formatter": {
+      "enabled": false,
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineEnding": "lf",
+      "attributePosition": "auto"
+    }
+  },
+  "css": {
+    "formatter": {
+      "enabled": false,
+      "quoteStyle": "single"
+    },
+    "parser": {
+      "cssModules": true
+    },
+    "linter": {
+      "enabled": true
+    },
+    "assist": {
+      "enabled": false
+    }
+  },
   "linter": {
     "rules": {
       "style": {
