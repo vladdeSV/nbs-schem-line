@@ -63,44 +63,6 @@ body {
   overflow: hidden;
 }
 
-body::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  width: 200%;
-  height: 200%;
-  inset: -50%;
-
-  background-image: url('notes.svg');
-  background-repeat: repeat;
-  background-size: 150px 300px;
-  rotate: 10deg;
-  opacity: 0.25;
-}
-
-@keyframes bg {
-  from {
-    transform: translate(0, 0);
-  }
-
-  to {
-
-    transform: translate(400px, 200px);
-  }
-}
-
-/*
-not too fond of the animation tbh. disabling for now
-@media (prefers-reduced-motion: no-preference) {
-  body::before {
-    animation-name: bg;
-    animation-duration: 30s;
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
-  }
-}
-*/
-
 .converter {
   max-width: 100%;
   width: 500px;
