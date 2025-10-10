@@ -1,4 +1,15 @@
-import { convertNBSToSchem } from '../web/converter.ts'
+import '@ungap/compression-stream/poly'
+import { parseNBSFile } from '../source/parse-nbs.ts'
+import { processBinaryStreams } from '../source/process-binary-stream.ts'
+import { parseInstrumentStreams } from '../source/create-schem.ts'
+
+async function convertNBSToSchem(nbsFileBuffer: ArrayBuffer, useFixedSpacing: boolean = true): Promise<Uint8Array> {
+  const nbs = new Uint8Array(nbsFileBuffer)
+  const notes = parseNBSFile(nbs, useFixedSpacing)
+  const processed = processBinaryStreams(notes)
+  const data = await parseInstrumentStreams(processed)
+  return data
+}
 
 // elements
 const uploadArea = document.querySelector('.upload-area') as HTMLElement
@@ -79,7 +90,9 @@ uploadArea.addEventListener('drop', e => {
 // convert
 convertButton.addEventListener('click', async () => {
   const file = uploadInput.files?.[0]
-  if (!file) return
+  if (!file) {
+    return
+  }
 
   try {
     resultText.textContent = 'converting...'
