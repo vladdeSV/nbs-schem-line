@@ -3,9 +3,9 @@ import { parseNBSFile } from '../source/parse-nbs.ts'
 import { processBinaryStreams } from '../source/process-binary-stream.ts'
 import { parseInstrumentStreams } from '../source/create-schem.ts'
 
-async function convertNBSToSchem(nbsFileBuffer: ArrayBuffer, useFixedSpacing: boolean = true): Promise<Uint8Array> {
+async function convertNBSToSchem(nbsFileBuffer: ArrayBuffer, useRounding: boolean = true): Promise<Uint8Array> {
   const nbs = new Uint8Array(nbsFileBuffer)
-  const notes = parseNBSFile(nbs, useFixedSpacing)
+  const notes = parseNBSFile(nbs, useRounding)
   const processed = processBinaryStreams(notes)
   const data = await parseInstrumentStreams(processed)
   return data
@@ -99,12 +99,12 @@ convertButton.addEventListener('click', async () => {
     convertButton.disabled = true
 
     const arrayBuffer = await file.arrayBuffer()
-    const useFixedSpacing = timingSelect.value === 'fixed'
+    const useRounding = timingSelect.value === 'round'
 
     console.log('converting file:', file.name)
     console.log('timing adjustment:', timingSelect.value)
 
-    const schemData = await convertNBSToSchem(arrayBuffer, useFixedSpacing)
+    const schemData = await convertNBSToSchem(arrayBuffer, useRounding)
 
     const blob = new Blob([schemData], { type: 'application/octet-stream' })
     const url = URL.createObjectURL(blob)

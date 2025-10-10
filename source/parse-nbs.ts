@@ -2,11 +2,11 @@ import { fromArrayBuffer, Note as NBSNote, type Song, Song as SongClass } from '
 
 export type { InstrumentId, Note, NoteId, Stream }
 
-export function parseNBSFile(buffer: Uint8Array, useFixedSpacing = true): Record<InstrumentId, Record<NoteId, Stream>> {
+export function parseNBSFile(buffer: Uint8Array, useRounding = true): Record<InstrumentId, Record<NoteId, Stream>> {
   const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
 
   const song = fromArrayBuffer(arrayBuffer)
-  const adjustedSong = validateAndAdjustSong(song, useFixedSpacing)
+  const adjustedSong = validateAndAdjustSong(song, useRounding)
   const streams = convertNBStoStreams(adjustedSong)
   return streams
 }
@@ -23,7 +23,7 @@ interface Note {
 const intrumentMinValue = 33
 const instrumentMaxValue = 57
 
-function validateAndAdjustSong(song: Song, useFixedSpacing: boolean): Song {
+function validateAndAdjustSong(song: Song, useRounding: boolean): Song {
   const outOfRangeNotes = song.layers.all.some(layer =>
     Object.values(layer.notes.all).some(
       (note: NBSNote) => note.key < intrumentMinValue || note.key > instrumentMaxValue,
@@ -52,14 +52,14 @@ function validateAndAdjustSong(song: Song, useFixedSpacing: boolean): Song {
   }
   console.warn('proceeding with adjustments...')
 
-  return createAdjustedSong(song, useFixedSpacing)
+  return createAdjustedSong(song, useRounding)
 }
 
-function calculateTempoDelta(originalTempo: number, useFixedSpacing: boolean): number {
+function calculateTempoDelta(originalTempo: number, useRounding: boolean): number {
   const roundingCutoff = 0.75
 
   if (originalTempo <= 20) {
-    if (useFixedSpacing) {
+    if (useRounding) {
       return Math.floor(20 / originalTempo + roundingCutoff) - 1
     }
 
@@ -70,7 +70,7 @@ function calculateTempoDelta(originalTempo: number, useFixedSpacing: boolean): n
   return -(2 ** Math.floor(Math.log2(originalTempo / (20 * (1 + roundingCutoff))) + 1)) + 1
 }
 
-function createAdjustedSong(originalSong: Song, useFixedSpacing: boolean): Song {
+function createAdjustedSong(originalSong: Song, useRounding: boolean): Song {
   const adjustedSong = new SongClass()
 
   // copy metadata
@@ -82,7 +82,7 @@ function createAdjustedSong(originalSong: Song, useFixedSpacing: boolean): Song 
   adjustedSong.setTempo(20)
 
   const originalTempo = originalSong.getTempo()
-  const tempoDelta = calculateTempoDelta(originalTempo, useFixedSpacing)
+  const tempoDelta = calculateTempoDelta(originalTempo, useRounding)
   const compressionFactor = tempoDelta < 0 ? -tempoDelta + 1 : 0
   console.debug('tempoDelta:', tempoDelta)
   console.debug('compressionFactor:', compressionFactor)
