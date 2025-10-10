@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MAESTRO Converter</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main class="converter">
+    <header class="converter-header">
+      <h1>
+        <abbr title="Multi-Aural, Encodable, Synchronous-Tick, Redstone Orchestra">MAESTRO</abbr>
+        converter
+      </h1>
+    </header>
+
+    <div class="converter-content">
+      <div class="upload-area" data-state="empty">
+        <input
+          type="file"
+          class="upload-input"
+          accept=".nbs"
+          aria-label="Upload NBS file"
+        >
+
+        <div class="upload-prompt">
+          <span class="upload-icon" aria-hidden="true">📁</span>
+          <p class="upload-text">drag and drop your .nbs file here</p>
+          <p class="upload-subtext">or click to browse</p>
+        </div>
+
+        <div class="upload-result">
+          <span class="result-icon" aria-hidden="true">📄</span>
+          <p class="result-text"></p>
+        </div>
+      </div>
+
+      <label class="option-group">
+        timing adjustment:
+        <select class="timing-select">
+          <option value="approximate">approximate</option>
+          <option value="fixed">fixed spacing</option>
+        </select>
+      </label>
+
+      <button class="convert-button" disabled>
+        convert to .schem
+      </button>
+    </div>
+
+    <article class="instructions">
+      <h2>Instructions</h2>
+      <ol>
+        <li>Upload a Note Block Studio file (.nbs)</li>
+        <li>Press the "Convert" button to convert and download the .schem file</li>
+        <li>
+          Open your <code>.minecraft</code> folder, and navigate to:
+          <br>
+          <code>config › worldedit › schematics</code>, and place the .schem file there
+        </li>
+        <li>
+          In Minecraft, type the following commands:
+          <ol>
+            <li><code>/tp 0 130 0</code></li>
+            <li><code>//schem load &lt;your-schematic&gt;.schem</code></li>
+            <li>
+              <code>//paste -a</code>
+              <small><strong>IMPORTANT</strong>: You must include the <code>-a</code>, otherwise you will destroy the machine</small>
+            </li>
+          </ol>
+        </li>
+      </ol>
+    </article>
+  </main>
+
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

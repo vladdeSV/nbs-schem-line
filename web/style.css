@@ -1,0 +1,277 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+
+/* reset */
+:root {
+  color-scheme: light;
+  box-sizing: border-box;
+  line-height: 1.5;
+  -moz-text-size-adjust: none;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  font-family: 'Noto Sans', sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin: 0;
+  padding: 0;
+  font-weight: normal;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+label {
+  display: block;
+}
+
+ol {
+  padding-inline-start: 2em;
+}
+
+code {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.9em;
+  outline: 1px solid #aaa;
+  border-radius: 2px;
+  padding-inline: 2px;
+  background-color: #0001;
+}
+
+/* layout */
+body {
+  min-height: 100svh;
+  background-color: #7ebcff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1em;
+  overflow: hidden;
+}
+
+body::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: 200%;
+  height: 200%;
+  inset: -50%;
+
+  background-image: url('notes.svg');
+  background-repeat: repeat;
+  background-size: 150px 300px;
+  rotate: 10deg;
+  opacity: 0.25;
+}
+
+@keyframes bg {
+  from {
+    transform: translate(0, 0);
+  }
+
+  to {
+
+    transform: translate(400px, 200px);
+  }
+}
+
+/*
+not too fond of the animation tbh. disabling for now
+@media (prefers-reduced-motion: no-preference) {
+  body::before {
+    animation-name: bg;
+    animation-duration: 30s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+}
+*/
+
+.converter {
+  max-width: 100%;
+  width: 500px;
+  background: white;
+  box-shadow: 0 2px 0 0 #0003;
+}
+
+.converter-header {
+  background: #d0c5c0;
+  padding: 0.625rem 0.5rem;
+  box-shadow: inset 0 -2px 0 #0003;
+}
+
+.converter-header h1 {
+  font-family: monospace;
+  text-align: center;
+  font-weight: bold;
+  color: #262423;
+}
+
+.converter-content {
+  padding: 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+/* upload area */
+.upload-area {
+  position: relative;
+  min-height: 150px;
+  border: 3px dashed #666;
+  background: #f5f5f5;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upload-area:hover {
+  background: #e8e8e8;
+  border-color: #007bff;
+}
+
+.upload-area[data-state="dragging"] {
+  border-color: #007bff;
+  background: #e3f2fd;
+  transform: scale(1.02);
+}
+
+.upload-area[data-state="success"] {
+  border: 2px solid #4caf50;
+}
+
+.upload-area[data-state="error"] {
+  border: 2px solid #f44336;
+}
+
+.upload-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.upload-prompt,
+.upload-result {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5em;
+  padding: 1em;
+  pointer-events: none;
+}
+
+.upload-area[data-state="success"] .upload-prompt,
+.upload-area[data-state="error"] .upload-prompt {
+  display: none;
+}
+
+.upload-area[data-state="empty"] .upload-result,
+.upload-area[data-state="dragging"] .upload-result {
+  display: none;
+}
+
+.upload-icon,
+.result-icon {
+  font-size: 2.5em;
+  line-height: 1;
+}
+
+.result-icon {
+  font-size: 2em;
+}
+
+.upload-text {
+  font-weight: 600;
+  color: #333;
+  font-size: 1em;
+}
+
+.upload-subtext {
+  font-size: 0.875em;
+  color: #666;
+}
+
+.result-text {
+  font-weight: 600;
+  color: #333;
+  word-break: break-all;
+  text-align: center;
+}
+
+/* options */
+.option-group {
+  font-size: 0.875em;
+}
+
+.timing-select {
+  margin-top: 0.25em;
+  padding: 0.5em;
+  border: 2px solid #333;
+  background: white;
+  font-size: 1em;
+  width: 100%;
+  cursor: pointer;
+}
+
+.timing-select:focus-visible {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+/* convert button */
+.convert-button {
+  display: block;
+  width: 100%;
+  padding: 0.75em 1.5em;
+  font-size: 1em;
+  font-weight: 500;
+  border: 2px solid black;
+  background: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  box-shadow: inset 0 0.375rem 0 0 #fff3, inset 0 -0.375rem 0 0 #0003;
+}
+
+.convert-button:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.convert-button:active:not(:disabled) {
+  background: #004085;
+}
+
+.convert-button:focus-visible {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+.convert-button:disabled {
+  opacity: 0.5;
+  background: #98a0a8;
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+/* instructions */
+.instructions {
+  background: #ede5e2;
+  padding: 1em;
+}
