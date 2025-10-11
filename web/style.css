@@ -2,7 +2,7 @@
 
 /* reset */
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
   box-sizing: border-box;
   line-height: 1.5;
   -moz-text-size-adjust: none;
@@ -46,16 +46,16 @@ ol {
 code {
   font-family: 'Roboto Mono', monospace;
   font-size: 0.9em;
-  outline: 1px solid #aaa;
+  outline: 1px solid light-dark(#aaa, #666);
   border-radius: 2px;
   padding-inline: 2px;
-  background-color: #0001;
+  background-color: light-dark(#0001, #fff1);
 }
 
 /* layout */
 body {
   min-height: 100svh;
-  background-color: #7ebcff;
+  background-color: light-dark(#7ebcff, #181818);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -65,21 +65,21 @@ body {
 .converter {
   max-width: 100%;
   width: 500px;
-  background: white;
-  box-shadow: 0 2px 0 0 #0003;
+  background: light-dark(white, #2a2a2a);
+  box-shadow: 0 2px 0 0 light-dark(#0003, #0006);
 }
 
 .converter-header {
-  background: #d0c5c0;
+  background: light-dark(#d0c5c0, #3a3a3a);
   padding: 0.625rem 0.5rem;
-  box-shadow: inset 0 -2px 0 #0003;
+  box-shadow: inset 0 -2px 0 light-dark(#0003, #0006);
 }
 
 .converter-header h1 {
   font-family: monospace;
   text-align: center;
   font-weight: bold;
-  color: #262423;
+  color: light-dark(#262423, #e0e0e0);
 }
 
 .converter-content {
@@ -93,20 +93,20 @@ body {
 .upload-area {
   position: relative;
   min-height: 150px;
-  border: 3px dashed #666;
-  background: #f5f5f5;
+  border: 3px dashed light-dark(#666, #999);
+  background: light-dark(#f5f5f5, #1a1a1a);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .upload-area:hover {
-  background: #e8e8e8;
-  border-color: #007bff;
+  background: light-dark(#e8e8e8, #333);
+  border-color: light-dark(#007bff, #4da3ff);
 }
 
 .upload-area[data-state="dragging"] {
-  border-color: #007bff;
-  background: #e3f2fd;
+  border-color: light-dark(#007bff, #4da3ff);
+  background: light-dark(#e3f2fd, #1a3a52);
   transform: scale(1.02);
 }
 
@@ -160,18 +160,18 @@ body {
 
 .upload-text {
   font-weight: 600;
-  color: #333;
+  color: light-dark(#333, #e0e0e0);
   font-size: 1em;
 }
 
 .upload-subtext {
   font-size: 0.875em;
-  color: #666;
+  color: light-dark(#666, #aaa);
 }
 
 .result-text {
   font-weight: 600;
-  color: #333;
+  color: light-dark(#333, #e0e0e0);
   word-break: break-all;
   text-align: center;
 }
@@ -184,15 +184,16 @@ body {
 .timing-select {
   margin-top: 0.25em;
   padding: 0.5em;
-  border: 2px solid #333;
-  background: white;
+  border: 2px solid light-dark(#333, #666);
+  background: light-dark(white, #1a1a1a);
+  color: light-dark(#000, #e0e0e0);
   font-size: 1em;
   width: 100%;
   cursor: pointer;
 }
 
 .timing-select:focus-visible {
-  outline: 2px solid #007bff;
+  outline: 2px solid light-dark(#007bff, #4da3ff);
   outline-offset: 2px;
 }
 
@@ -203,8 +204,8 @@ body {
   padding: 0.75em 1.5em;
   font-size: 1em;
   font-weight: 500;
-  border: 2px solid black;
-  background: #007bff;
+  border: 2px solid #111;
+  background: light-dark(#007bff, #0062cc);
   color: white;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -212,27 +213,27 @@ body {
 }
 
 .convert-button:hover:not(:disabled) {
-  background: #0056b3;
+  background: light-dark(#0056b3, #004a99);
 }
 
 .convert-button:active:not(:disabled) {
-  background: #004085;
+  background: light-dark(#004085, #003d7a);
 }
 
 .convert-button:focus-visible {
-  outline: 2px solid #007bff;
+  outline: 2px solid light-dark(#007bff, #4da3ff);
   outline-offset: 2px;
 }
 
 .convert-button:disabled {
   opacity: 0.5;
-  background: #98a0a8;
-  color: #ccc;
+  background: light-dark(#98a0a8, #4a4a4a);
+  color: light-dark(#ccc, #666);
   cursor: not-allowed;
 }
 
 /* instructions */
 .instructions {
-  background: #ede5e2;
+  background: light-dark(#ede5e2, #333);
   padding: 1em;
 }
