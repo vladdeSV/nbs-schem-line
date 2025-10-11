@@ -2,11 +2,15 @@ import { fromArrayBuffer, Note as NBSNote, type Song, Song as SongClass } from '
 
 export type { InstrumentId, Note, NoteId, Stream }
 
-export function parseNBSFile(buffer: Uint8Array, useRounding = true): Record<InstrumentId, Record<NoteId, Stream>> {
+export type RoundingMethod = 'approximate' | 'round' | 'none'
+export function parseNBSFile(
+  buffer: Uint8Array,
+  rounding: RoundingMethod,
+): Record<InstrumentId, Record<NoteId, Stream>> {
   const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
 
   const song = fromArrayBuffer(arrayBuffer)
-  const adjustedSong = validateAndAdjustSong(song, useRounding)
+  const adjustedSong = validateAndAdjustSong(song, rounding)
   const streams = convertNBStoStreams(adjustedSong)
   return streams
 }
@@ -23,7 +27,7 @@ interface Note {
 const intrumentMinValue = 33
 const instrumentMaxValue = 57
 
-function validateAndAdjustSong(song: Song, useRounding: boolean): Song {
+function validateAndAdjustSong(song: Song, roundingMethod: RoundingMethod): Song {
   const outOfRangeNotes = song.layers.all.some(layer =>
     Object.values(layer.notes.all).some(
       (note: NBSNote) => note.key < intrumentMinValue || note.key > instrumentMaxValue,
@@ -34,7 +38,7 @@ function validateAndAdjustSong(song: Song, useRounding: boolean): Song {
     Object.values(layer.notes.all).some((note: NBSNote) => note.instrument > 15),
   )
 
-  const hasIllegalTempo = song.getTempo() !== 20
+  const hasIllegalTempo = song.getTempo() !== 20 && roundingMethod !== 'none'
 
   if (!outOfRangeNotes && !hasCustomInstruments && !hasIllegalTempo) {
     return song
@@ -52,14 +56,18 @@ function validateAndAdjustSong(song: Song, useRounding: boolean): Song {
   }
   console.warn('proceeding with adjustments...')
 
-  return createAdjustedSong(song, useRounding)
+  return createAdjustedSong(song, roundingMethod)
 }
 
-function calculateTempoDelta(originalTempo: number, useRounding: boolean): number {
+function calculateTempoDelta(originalTempo: number, roundingMethod: RoundingMethod): number {
+  if (roundingMethod === 'none') {
+    return 0
+  }
+
   const roundingCutoff = 0.75
 
   if (originalTempo <= 20) {
-    if (useRounding) {
+    if (roundingMethod === 'round') {
       return Math.floor(20 / originalTempo + roundingCutoff) - 1
     }
 
@@ -70,7 +78,7 @@ function calculateTempoDelta(originalTempo: number, useRounding: boolean): numbe
   return -(2 ** Math.floor(Math.log2(originalTempo / (20 * (1 + roundingCutoff))) + 1)) + 1
 }
 
-function createAdjustedSong(originalSong: Song, useRounding: boolean): Song {
+function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod): Song {
   const adjustedSong = new SongClass()
 
   // copy metadata
@@ -79,10 +87,13 @@ function createAdjustedSong(originalSong: Song, useRounding: boolean): Song {
   adjustedSong.originalAuthor = originalSong.originalAuthor
   adjustedSong.description = originalSong.description
   adjustedSong.timeSignature = originalSong.timeSignature
-  adjustedSong.setTempo(20)
+
+  // okay this is probably overkill, but...
+  const tempo = roundingMethod === 'none' ? originalSong.getTempo() : 20
+  adjustedSong.setTempo(tempo)
 
   const originalTempo = originalSong.getTempo()
-  const tempoDelta = calculateTempoDelta(originalTempo, useRounding)
+  const tempoDelta = calculateTempoDelta(originalTempo, roundingMethod)
   const compressionFactor = tempoDelta < 0 ? -tempoDelta + 1 : 0
   console.debug('tempoDelta:', tempoDelta)
   console.debug('compressionFactor:', compressionFactor)

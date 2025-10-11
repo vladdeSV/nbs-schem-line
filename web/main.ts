@@ -1,11 +1,11 @@
 import '@ungap/compression-stream/poly'
-import { parseNBSFile } from '../source/parse-nbs.ts'
+import { parseNBSFile, type RoundingMethod } from '../source/parse-nbs.ts'
 import { processBinaryStreams } from '../source/process-binary-stream.ts'
 import { parseInstrumentStreams } from '../source/create-schem.ts'
 
-async function convertNBSToSchem(nbsFileBuffer: ArrayBuffer, useRounding: boolean = true): Promise<Uint8Array> {
+async function convertNBSToSchem(nbsFileBuffer: ArrayBuffer, rounding: RoundingMethod): Promise<Uint8Array> {
   const nbs = new Uint8Array(nbsFileBuffer)
-  const notes = parseNBSFile(nbs, useRounding)
+  const notes = parseNBSFile(nbs, rounding)
   const processed = processBinaryStreams(notes)
   const data = await parseInstrumentStreams(processed)
   return data
@@ -99,14 +99,25 @@ convertButton.addEventListener('click', async () => {
     convertButton.disabled = true
 
     const arrayBuffer = await file.arrayBuffer()
-    const useRounding = timingSelect.value === 'round'
 
-    console.log('converting file:', file.name)
-    console.log('timing adjustment:', timingSelect.value)
+    function getRoundingMethod(value: unknown): RoundingMethod {
+      switch (value) {
+        case 'round':
+          return 'round'
+        case 'approximate':
+          return 'approximate'
+        case 'none':
+          return 'none'
+        default:
+          console.warn('unknown rounding method:', value)
+          return 'none'
+      }
+    }
 
-    const schemData = await convertNBSToSchem(arrayBuffer, useRounding)
+    const round = getRoundingMethod(timingSelect.value)
+    const schemData = await convertNBSToSchem(arrayBuffer, round)
 
-    const blob = new Blob([schemData], { type: 'application/octet-stream' })
+    const blob = new Blob([schemData.slice()], { type: 'application/octet-stream' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
