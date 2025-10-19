@@ -192,20 +192,16 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
   let tickMap: Tick[] = []
   let maxStackedTicks = 1
   if (roundingMethod === 'flexible') {
+    console.debug('using flexible rounding with tempo change detection')
+
     const tempoChangerInstruments = getTempoChangerInstruments(originalSong)
-    if (tempoChangerInstruments.length === 0) {
-      console.warn('no tempo changer instruments found, falling back to approximate rounding')
-      roundingMethod = 'approximate'
-    } else {
-      console.debug('using flexible rounding with tempo segments')
+    const tempoSegments = getTempoSegments(originalSong, tempoChangerInstruments)
+    tickMap = getTickMap(originalSong, tempoSegments)
 
-      const tempoSegments = getTempoSegments(originalSong, tempoChangerInstruments)
-      tickMap = getTickMap(originalSong, tempoSegments)
-
-      // Determine maximum number of stacked ticks after tempo changes
-      const maxTempo = Math.max(...Object.values(tempoSegments))
-      maxStackedTicks = Math.ceil(maxTempo / 20)
-    }
+    // Determine maximum number of stacked ticks after tempo changes
+    // (support for tempos > 20 t/s)
+    const maxTempo = Math.max(...Object.values(tempoSegments))
+    maxStackedTicks = Math.ceil(maxTempo / 20)
   }
 
   // process each layer
