@@ -100,8 +100,6 @@ function getTempoSegments(song: Song, tempoChangerInstruments: InstrumentId[]): 
  * and the value at that index represents the adjusted tick after accounting for tempo changes.
  */
 function getTickMap(song: Song, tempoSegments: Record<Tick, Tempo>): Tick[] {
-  console.debug('tempo segments:', tempoSegments)
-
   let currentTempo = song.getTempo()
   const tickMap = [0] // tick 0 always maps to tick 0
   const songLength = song.getLength()
@@ -110,16 +108,13 @@ function getTickMap(song: Song, tempoSegments: Record<Tick, Tempo>): Tick[] {
     // check if there's a tempo change at this tick
     if (tick in tempoSegments) {
       currentTempo = tempoSegments[tick]
-      console.debug(`tempo change at tick ${tick}: ${currentTempo} t/s`)
     }
-    console.debug(`mapping tick ${tick} at tempo ${currentTempo} t/s`)
 
     const previousMappedTick = tickMap[tick - 1]
     const mappedTick = previousMappedTick + 20 / currentTempo
     tickMap.push(mappedTick)
   }
 
-  console.debug('tick map:', tickMap)
   return tickMap
 }
 
@@ -203,14 +198,12 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
       roundingMethod = 'approximate'
     } else {
       console.debug('using flexible rounding with tempo segments')
-      console.debug('tempo changer instruments:', tempoChangerInstruments)
 
       const tempoSegments = getTempoSegments(originalSong, tempoChangerInstruments)
       tickMap = getTickMap(originalSong, tempoSegments)
 
       // Determine maximum number of stacked ticks after tempo changes
       const maxTempo = Math.max(...Object.values(tempoSegments))
-      console.debug('maxTempo:', maxTempo)
       maxStackedTicks = Math.ceil(maxTempo / 20)
     }
   }
@@ -231,7 +224,6 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
       newLayer.isLocked = originalLayer.isLocked
       newLayer.isSolo = originalLayer.isSolo
       addedLayers.push(newLayer)
-      console.debug(`created additional layer ${i} (maxStackedTicks: ${maxStackedTicks})`)
     }
     // Go back to the first layer we created
     let currentStackedLayer = -1 // will be incremented to 0 on first note
@@ -269,15 +261,11 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
       } else {
         adjustedTick = Math.round(tickMap[tick])
 
-        console.debug(`original tick ${tick} maps to adjusted tick ${adjustedTick}`)
-
         // if multiple ticks map to the same adjusted tick, we put them in the next available layer
         if (adjustedTick <= lastPopulatedTick) {
           currentStackedLayer += 1
-          console.debug(`tick ${tick} (adjusted tick ${adjustedTick}) collides, moving to layer ${currentStackedLayer}`)
         } else {
           currentStackedLayer = 0
-          console.debug(`tick ${tick} (adjusted tick ${adjustedTick}) does not collide, resetting to layer 0`)
         }
         adjustedLayer = addedLayers[currentStackedLayer]
         if (!adjustedLayer) {
@@ -292,25 +280,11 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
         panning: note.panning,
         pitch: note.pitch,
       })
-      console.debug(`adding note at original tick ${tick} (adjusted tick ${adjustedTick}):`, adjustedNote)
       adjustedLayer.notes.add(adjustedTick, adjustedNote)
 
       lastPopulatedTick = adjustedTick
     }
   }
-
-  // Save the adjusted song and download it for debugging
-  const buffer = toArrayBuffer(adjustedSong)
-  const fixedBuffer = buffer.slice(0);
-  const blob = new Blob([fixedBuffer], { type: 'application/octet-stream' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a')
-  a.href = url
-  a.download = originalSong.name ? `${originalSong.name}-adjusted.nbs` : 'adjusted.nbs'
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
   
   return adjustedSong
 }
