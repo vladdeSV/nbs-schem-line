@@ -198,14 +198,14 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
     const tempoSegments = getTempoSegments(originalSong, tempoChangerInstruments)
     tickMap = getTickMap(originalSong, tempoSegments)
 
-    // Determine maximum number of stacked ticks after tempo changes
+    // determine maximum number of stacked ticks after tempo changes
     // (support for tempos > 20 t/s)
     const maxTempo = Math.max(...Object.values(tempoSegments))
     maxStackedTicks = Math.ceil(maxTempo / 20)
   }
 
   // process each layer
-   // Layers are returned bottom to top, so we reverse to process top to bottom
+  // layers are returned bottom to top, so we reverse to process top to bottom
   for (const originalLayer of originalSong.layers.all.toReversed()) {
     console.debug('processing layer:', originalLayer)
 
@@ -221,7 +221,7 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
       newLayer.isSolo = originalLayer.isSolo
       addedLayers.push(newLayer)
     }
-    // Go back to the first layer we created
+    // go back to the first layer we created
     let currentStackedLayer = -1 // will be incremented to 0 on first note
     adjustedLayer = addedLayers[0]
     
