@@ -267,7 +267,7 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
       if (roundingMethod !== 'flexible') {
         adjustedTick = compressionFactor > 0 ? tick / compressionFactor : Math.floor(tick + tick * tempoDelta)
       } else {
-        adjustedTick = Math.floor(tickMap[tick])
+        adjustedTick = Math.round(tickMap[tick])
 
         console.debug(`original tick ${tick} maps to adjusted tick ${adjustedTick}`)
 
