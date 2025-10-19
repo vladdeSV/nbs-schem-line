@@ -5,7 +5,6 @@ import {
   Note as NBSNote,
   type Song,
   Song as SongClass,
-  toArrayBuffer,
 } from '@nbsjs/core'
 
 export type { InstrumentId, Note, NoteId, Stream }
