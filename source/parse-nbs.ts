@@ -218,11 +218,11 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
   // process each layer
    // Layers are returned bottom to top, so we reverse to process top to bottom
   for (const originalLayer of originalSong.layers.all.toReversed()) {
-    console.debug('processing layer:', originalLayer.name)
-    const addedLayers = []
-    let lastPopulatedTick = 0
+    console.debug('processing layer:', originalLayer)
 
+    const addedLayers = []
     let adjustedLayer: Layer
+    
     for (let i = 1; i <= maxStackedTicks; i++) {
       const newLayer = adjustedSong.layers.create()
       newLayer.name = originalLayer.name
@@ -235,6 +235,8 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
     }
     // Go back to the first layer we created
     adjustedLayer = addedLayers[0]
+    
+    let lastPopulatedTick = 0
 
     // process each note in the layer
     for (const [tickString, note] of Object.entries(originalLayer.notes.all) as [string, NBSNote][]) {
