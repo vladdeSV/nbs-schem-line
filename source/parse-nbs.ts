@@ -275,10 +275,14 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
         // if multiple ticks map to the same adjusted tick, we put them in the next available layer
         if (adjustedTick <= lastPopulatedTick) {
           currentStackedLayer += 1
-          adjustedLayer = addedLayers[currentStackedLayer]
-          if (!adjustedLayer) {
-            throw `no layer available for currentStackedLayer ${currentStackedLayer}, maxStackedTicks ${maxStackedTicks}`
-          }
+          console.debug(`tick ${tick} (adjusted tick ${adjustedTick}) collides, moving to layer ${currentStackedLayer}`)
+        } else {
+          currentStackedLayer = 0
+          console.debug(`tick ${tick} (adjusted tick ${adjustedTick}) does not collide, resetting to layer 0`)
+        }
+        adjustedLayer = addedLayers[currentStackedLayer]
+        if (!adjustedLayer) {
+          throw `no layer available for currentStackedLayer ${currentStackedLayer}, maxStackedTicks ${maxStackedTicks}`
         }
       }
 
