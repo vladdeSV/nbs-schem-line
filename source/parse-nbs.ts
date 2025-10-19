@@ -210,7 +210,7 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
 
     const addedLayers = []
     let adjustedLayer: Layer
-    
+
     for (let i = 1; i <= maxStackedTicks; i++) {
       const newLayer = adjustedSong.layers.create()
       newLayer.name = originalLayer.name
@@ -223,7 +223,7 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
     // go back to the first layer we created
     let currentStackedLayer = -1 // will be incremented to 0 on first note
     adjustedLayer = addedLayers[0]
-    
+
     let lastPopulatedTick = 0
 
     // process each note in the layer
@@ -280,7 +280,7 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
       lastPopulatedTick = adjustedTick
     }
   }
-  
+
   return adjustedSong
 }
 
