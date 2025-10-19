@@ -1,4 +1,12 @@
-import { fromArrayBuffer, Note as NBSNote, type Song, Song as SongClass } from '@nbsjs/core'
+import {
+  fromArrayBuffer,
+  type Instrument,
+  type Layer,
+  Note as NBSNote,
+  type Song,
+  Song as SongClass,
+  toArrayBuffer,
+} from '@nbsjs/core'
 
 export type { InstrumentId, Note, NoteId, Stream }
 
@@ -30,92 +38,89 @@ const intrumentMinValue = 33
 const instrumentMaxValue = 57
 
 /*
-  * Returns a list of instrument IDs that act as tempo changers (i.e. have the name "Tempo Changer").
-*/
+ * Returns a list of instrument IDs that act as tempo changers (i.e. have the name "Tempo Changer").
+ */
 function getTempoChangerInstruments(song: Song): InstrumentId[] {
-  return Object.values(song.instruments.all).flatMap((instrument, id) =>
-    instrument.meta.name === 'Tempo Changer' ? [id] : [],
-  );
+  return Object.values(song.instruments.all as Instrument[]).flatMap((instrument, id) =>
+    instrument.name === 'Tempo Changer' ? [id] : [],
+  )
 }
 
 /*
-  * Returns a mapping of tick -> new tempo (in ticks per second) for each tick with a tempo change in the song.
-  * If there are multiple tempo changers at the same tick, the one in the highest layer takes precedence.
-  * If there is no tempo changer at tick 0, the song's initial tempo is added at tick 0.
-  *
-  * Tempo changers are identified by their instrument being named "Tempo Changer".
-  * The new tempo at that point is determined by the note's pitch: pitch = BPM = (t/s) * 15
-  * e.g. a pitch of 150 means the tempo will be set to 15 ticks per second at that point.
-  *
-  * Negative pitches are allowed and have the same effect as their positive counterparts.
-*/
-function getTempoSegments(
-  song: Song,
-  tempoChangerInstruments: InstrumentId[],
-): Record<Tick, Tempo> {
-  const tempoSegments: Record<Tick, Tempo> = {};
+ * Returns a mapping of tick -> new tempo (in ticks per second) for each tick with a tempo change in the song.
+ * If there are multiple tempo changers at the same tick, the one in the highest layer takes precedence.
+ * If there is no tempo changer at tick 0, the song's initial tempo is added at tick 0.
+ *
+ * Tempo changers are identified by their instrument being named "Tempo Changer".
+ * The new tempo at that point is determined by the note's pitch: pitch = BPM = (t/s) * 15
+ * e.g. a pitch of 150 means the tempo will be set to 15 ticks per second at that point.
+ *
+ * Negative pitches are allowed and have the same effect as their positive counterparts.
+ */
+function getTempoSegments(song: Song, tempoChangerInstruments: InstrumentId[]): Record<Tick, Tempo> {
+  const tempoSegments: Record<Tick, Tempo> = {}
 
   if (tempoChangerInstruments.length > 0) {
     for (const layer of song.layers.all.reverse()) {
       for (const [tickStr, note] of Object.entries(layer.notes.all) as [string, NBSNote][]) {
-        const tick = parseInt(tickStr, 10);
+        const tick = parseInt(tickStr, 10)
 
         // Skip if note is undefined
-        if (!note) {continue};
+        if (!note) {
+          continue
+        }
 
         // Not a tempo changer
-        if (!tempoChangerInstruments.includes(note.instrument)) {continue};
+        if (!tempoChangerInstruments.includes(note.instrument)) {
+          continue
+        }
 
         // The tempo change isn't effective if there's another tempo changer in the same tick,
         // so we iterate layers bottom to top and skip the block if a tempo changer has already
         // been found in this tick
-        if (tick in tempoSegments) {continue};
+        if (tick in tempoSegments) {
+          continue
+        }
 
-        const tempo = Math.abs(note.pitch) / 15; // note pitch = BPM = (t/s) * 15
-        tempoSegments[tick] = tempo;
+        const tempo = Math.abs(note.pitch) / 15 // note pitch = BPM = (t/s) * 15
+        tempoSegments[tick] = tempo
       }
     }
   }
 
   // If there isn't a tempo changer at tick 0, we add one there to set the starting tempo
-  tempoSegments[0] = 0 in tempoSegments ? tempoSegments[0] : song.getTempo();
+  tempoSegments[0] = 0 in tempoSegments ? tempoSegments[0] : song.getTempo()
 
-  return tempoSegments;
+  return tempoSegments
 }
 
 /*
-  * Generates a tick mapping based on the song's tempo changes.
-  * The mapping is an array where the index represents the original tick,
-  * and the value at that index represents the adjusted tick after accounting for tempo changes.
-*/
-function getTickMap(
-  song: Song,
-): Tick[] {
-  const tempoChangerInstruments = getTempoChangerInstruments(song);
-  const tempoSegments = getTempoSegments(song, tempoChangerInstruments);
-  console.debug('tempo segments:', tempoSegments);
+ * Generates a tick mapping based on the song's tempo changes.
+ * The mapping is an array where the index represents the original tick,
+ * and the value at that index represents the adjusted tick after accounting for tempo changes.
+ */
+function getTickMap(song: Song, tempoSegments: Record<Tick, Tempo>): Tick[] {
+  console.debug('tempo segments:', tempoSegments)
 
-  let currentTempo = song.getTempo();
-  const tickMap = [0]; // tick 0 always maps to tick 0
+  let currentTempo = song.getTempo()
+  const tickMap = [0] // tick 0 always maps to tick 0
 
   for (let tick = 1; tick < song.getLength(); ++tick) {
-
     // check if there's a tempo change at this tick
     if (tick in tempoSegments) {
-      currentTempo = tempoSegments[tick];
-      console.debug(`tempo change at tick ${tick}: ${currentTempo} t/s`);
+      currentTempo = tempoSegments[tick]
+      console.debug(`tempo change at tick ${tick}: ${currentTempo} t/s`)
     }
+    console.debug(`mapping tick ${tick} at tempo ${currentTempo} t/s`)
 
-    const previousMappedTick = tickMap[tick - 1];
-    const mappedTick = previousMappedTick + (20 / currentTempo);
-    tickMap.push(mappedTick);
+    const previousMappedTick = tickMap[tick - 1]
+    const mappedTick = previousMappedTick + 20 / currentTempo
+    tickMap.push(mappedTick)
   }
 
-  console.debug('tick map:', tickMap);
-  return tickMap;
+  console.debug('tick map:', tickMap)
+  return tickMap
 }
-
-
 
 function validateAndAdjustSong(song: Song, roundingMethod: RoundingMethod): Song {
   const outOfRangeNotes = song.layers.all.some(layer =>
@@ -189,26 +194,55 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
   console.debug('compressionFactor:', compressionFactor)
 
   let tickMap: Tick[] = []
+  let maxStackedTicks = 1
   if (roundingMethod === 'flexible') {
-    console.debug('using flexible rounding with tempo segments')
-    tickMap = getTickMap(originalSong)
+    const tempoChangerInstruments = getTempoChangerInstruments(originalSong)
+    if (tempoChangerInstruments.length === 0) {
+      console.warn('no tempo changer instruments found, falling back to approximate rounding')
+      roundingMethod = 'approximate'
+    } else {
+      console.debug('using flexible rounding with tempo segments')
+      console.debug('tempo changer instruments:', tempoChangerInstruments)
+
+      const tempoSegments = getTempoSegments(originalSong, tempoChangerInstruments)
+      tickMap = getTickMap(originalSong, tempoSegments)
+
+      // Determine maximum number of stacked ticks after tempo changes
+      const maxTempo = Math.max(...Object.values(tempoSegments))
+      console.debug('maxTempo:', maxTempo)
+      maxStackedTicks = Math.ceil(maxTempo / 20)
+    }
   }
 
   // process each layer
-  for (const originalLayer of originalSong.layers.all) {
-    const adjustedLayer = adjustedSong.layers.create()
-    adjustedLayer.name = originalLayer.name
-    adjustedLayer.volume = originalLayer.volume
-    adjustedLayer.stereo = originalLayer.stereo
-    adjustedLayer.isLocked = originalLayer.isLocked
-    adjustedLayer.isSolo = originalLayer.isSolo
+   // Layers are returned bottom to top, so we reverse to process top to bottom
+  for (const originalLayer of originalSong.layers.all.toReversed()) {
+    console.debug('processing layer:', originalLayer.name)
+    const addedLayers = []
+    let lastPopulatedTick = 0
+
+    let adjustedLayer: Layer
+    for (let i = 1; i <= maxStackedTicks; i++) {
+      const newLayer = adjustedSong.layers.create()
+      newLayer.name = originalLayer.name
+      newLayer.volume = originalLayer.volume
+      newLayer.stereo = originalLayer.stereo
+      newLayer.isLocked = originalLayer.isLocked
+      newLayer.isSolo = originalLayer.isSolo
+      addedLayers.push(newLayer)
+      console.debug(`created additional layer ${i} (maxStackedTicks: ${maxStackedTicks})`)
+    }
+    // Go back to the first layer we created
+    adjustedLayer = addedLayers[0]
 
     // process each note in the layer
     for (const [tickString, note] of Object.entries(originalLayer.notes.all) as [string, NBSNote][]) {
       const tick = Number(tickString)
 
+      let currentStackedLayer = 0
+
       // skip if compressing and not on a relevant tick
-      if (compressionFactor > 0 && tick % compressionFactor !== 0) {
+      if (roundingMethod !== 'flexible' && compressionFactor > 0 && tick % compressionFactor !== 0) {
         continue
       }
 
@@ -227,11 +261,22 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
       }
 
       // adjust timing based on tempo change
-      let adjustedTick: number;
-      if (roundingMethod === 'flexible') {
-        adjustedTick = tickMap[Math.floor(tick)]
-      } else {
+      let adjustedTick: number
+      if (roundingMethod !== 'flexible') {
         adjustedTick = compressionFactor > 0 ? tick / compressionFactor : Math.floor(tick + tick * tempoDelta)
+      } else {
+        adjustedTick = Math.floor(tickMap[tick])
+
+        console.debug(`original tick ${tick} maps to adjusted tick ${adjustedTick}`)
+
+        // if multiple ticks map to the same adjusted tick, we put them in the next available layer
+        if (adjustedTick <= lastPopulatedTick) {
+          currentStackedLayer += 1
+          adjustedLayer = addedLayers[currentStackedLayer]
+          if (!adjustedLayer) {
+            throw `no layer available for currentStackedLayer ${currentStackedLayer}, maxStackedTicks ${maxStackedTicks}`
+          }
+        }
       }
 
       // add adjusted note to the layer
@@ -241,10 +286,26 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
         panning: note.panning,
         pitch: note.pitch,
       })
+      console.debug(`adding note at original tick ${tick} (adjusted tick ${adjustedTick}):`, adjustedNote)
       adjustedLayer.notes.add(adjustedTick, adjustedNote)
+
+      lastPopulatedTick = adjustedTick
     }
   }
 
+  // Save the adjusted song and download it for debugging
+  const buffer = toArrayBuffer(adjustedSong)
+  const fixedBuffer = buffer.slice(0);
+  const blob = new Blob([fixedBuffer], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a')
+  a.href = url
+  a.download = originalSong.name ? `${originalSong.name}-adjusted.nbs` : 'adjusted.nbs'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+  
   return adjustedSong
 }
 
