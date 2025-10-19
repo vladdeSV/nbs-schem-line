@@ -234,6 +234,7 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
       console.debug(`created additional layer ${i} (maxStackedTicks: ${maxStackedTicks})`)
     }
     // Go back to the first layer we created
+    let currentStackedLayer = -1 // will be incremented to 0 on first note
     adjustedLayer = addedLayers[0]
     
     let lastPopulatedTick = 0
@@ -241,8 +242,6 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
     // process each note in the layer
     for (const [tickString, note] of Object.entries(originalLayer.notes.all) as [string, NBSNote][]) {
       const tick = Number(tickString)
-
-      let currentStackedLayer = 0
 
       // skip if compressing and not on a relevant tick
       if (roundingMethod !== 'flexible' && compressionFactor > 0 && tick % compressionFactor !== 0) {
