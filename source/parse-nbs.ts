@@ -104,8 +104,9 @@ function getTickMap(song: Song, tempoSegments: Record<Tick, Tempo>): Tick[] {
 
   let currentTempo = song.getTempo()
   const tickMap = [0] // tick 0 always maps to tick 0
+  const songLength = song.getLength()
 
-  for (let tick = 1; tick < song.getLength(); ++tick) {
+  for (let tick = 1; tick < songLength; ++tick) {
     // check if there's a tempo change at this tick
     if (tick in tempoSegments) {
       currentTempo = tempoSegments[tick]
