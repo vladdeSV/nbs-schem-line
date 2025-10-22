@@ -106,6 +106,8 @@ convertButton.addEventListener('click', async () => {
           return 'round'
         case 'approximate':
           return 'approximate'
+        case 'flexible':
+          return 'flexible'
         case 'none':
           return 'none'
         default:
