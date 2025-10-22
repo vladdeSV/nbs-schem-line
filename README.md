@@ -10,6 +10,16 @@ download this repository, then `cd` into it and install all dependencies:
 bun install
 ```
 
+## start local website
+
+start a local webserver to run the converter with
+
+```sh
+bun web/index.html
+```
+
+and it will start on [localhost:3000](http://localhost:3000)
+
 ## convert a file
 
 run with
