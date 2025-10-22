@@ -1,54 +1,55 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang=en>
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset=utf-8>
+  <meta name=viewport content=width=device-width, initial-scale=1.0>
   <title>MAESTRO Converter</title>
-  <link rel="stylesheet" href="./style.css">
+  <link rel=stylesheet href=./style.css>
 </head>
 
 <body>
-  <main class="converter">
-    <header class="converter-header">
+  <main class=converter>
+    <header class=converter-header>
       <h1>
-        <abbr title="Multi-Aural, Encodable, Synchronous-Tick, Redstone Orchestra">MAESTRO</abbr>
+        <abbr title=Multi-Aural, Encodable, Synchronous-Tick, Redstone Orchestra>MAESTRO</abbr>
         converter
       </h1>
     </header>
 
-    <div class="converter-content">
-      <div class="upload-area" data-state="empty">
-        <input type="file" class="upload-input" accept=".nbs" aria-label="Upload NBS file">
+    <div class=converter-content>
+      <div class=upload-area data-state=empty>
+        <input type=file class=upload-input accept=.nbs aria-label=Upload NBS file>
 
-        <div class="upload-prompt">
-          <span class="upload-icon" aria-hidden="true">📁</span>
-          <p class="upload-text">drag and drop your .nbs file here</p>
-          <p class="upload-subtext">or click to browse</p>
+        <div class=upload-prompt>
+          <span class=upload-icon aria-hidden=true>📁</span>
+          <p class=upload-text>drag and drop your .nbs file here</p>
+          <p class=upload-subtext>or click to browse</p>
         </div>
 
-        <div class="upload-result">
-          <span class="result-icon" aria-hidden="true">📄</span>
-          <p class="result-text"></p>
+        <div class=upload-result>
+          <span class=result-icon aria-hidden=true>📄</span>
+          <p class=result-text></p>
         </div>
       </div>
 
-      <label class="option-group">
+      <label class=option-group>
         tempo adjustment:
-        <select class="timing-select">
-          <option value="round">round, speeds up or slows down the song to fit perfectly in 20tps</option>
-          <option value="approximate">approximate, attempts to match original tempo as much as possible</option>
-          <option value="flexible">flexible, supports tempo changes during playback</option>
-          <option value="none">none, use '<code>/tick rate &lt;song tempo&gt;</code>' in-game to set the tempo</option>
+        <select class=timing-select>
+          <option value=round>round, speeds up or slows down the song to fit perfectly in 20tps</option>
+          <option value=approximate>approximate, attempts to match original tempo as much as possible</option>
+          <option value=flexible>flexible, supports tempo changes during playback</option>
+          <option value=none>none, use '<code>/tick rate &lt;song tempo&gt;</code>' in-game to set the tempo</option>
         </select>
       </label>
 
-      <button class="convert-button" disabled>
+      <button class=convert-button disabled>
         convert to .schem
       </button>
     </div>
 
-    <article class="instructions">
+    <article class=instructions>
+      <p>World download link: <a href=https://github.com/vladdeSV/maestro/releases/download/release/MAESTRO.zip>MAESTRO.zip</a></p>
       <h2>Instructions</h2>
       <ol>
         <li>Upload a Note Block Studio file (.nbs)</li>
@@ -70,10 +71,18 @@
           </ol>
         </li>
       </ol>
+
+      <h2>Mods</h2>
+      <p>To paste this schematic, we use WorldEdit to place all the discs in place.</p>
+      <p>The music machine works in pure vanilla, however we recommend some mods. We provide a <a href=https://modrinth.com/modpack/maestro>modpack on Modrinth</a> for the best experience.</p>
+
+      <h2>Extra</h2>
+      <p>This machine and accompanying code was created by <a href='https://www.youtube.com/watch?v=SSbhQxqi8b8'>Xoliks</a>, <a href='https://www.youtube.com/watch?v=G78AnHpIw5w'>jazziiRed</a>, <a href='https://www.youtube.com/watch?v=TG9kuGmJWaA'>mooncatcher</a>, and <a href='https://www.youtube.com/watch?v=XEnk1cvEvII'>vladde</a>.</p>
+      <p>In collaboration with <a href=https://noteblock.world/about>Open Note Block Studio</a>.</p>
     </article>
   </main>
 
-  <script type="module" src="./main.ts"></script>
+  <script type=module src=./main.ts></script>
 </body>
 
 </html>

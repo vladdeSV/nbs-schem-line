@@ -2,7 +2,7 @@
 
 /* reset */
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   box-sizing: border-box;
   line-height: 1.5;
   -moz-text-size-adjust: none;
@@ -30,6 +30,11 @@ p {
   font-weight: normal;
 }
 
+h2,
+h3 {
+  margin-block: 0.75em 0.25em;
+}
+
 img {
   max-width: 100%;
   height: auto;
@@ -39,8 +44,14 @@ label {
   display: block;
 }
 
-ol {
+p {
+  margin-bottom: 0.5em;
+}
+
+ol,
+ul {
   padding-inline-start: 2em;
+  margin-block: 0.5em;
 }
 
 code {
@@ -64,7 +75,7 @@ body {
 
 .converter {
   max-width: 100%;
-  width: 500px;
+  width: 570px;
   background: light-dark(white, #2a2a2a);
   box-shadow: 0 2px 0 0 light-dark(#0003, #0006);
 }
@@ -136,6 +147,10 @@ body {
   gap: 0.5em;
   padding: 1em;
   pointer-events: none;
+}
+
+.upload-prompt > p {
+  margin: 0;
 }
 
 .upload-area[data-state="success"] .upload-prompt,
@@ -234,6 +249,27 @@ body {
 
 /* instructions */
 .instructions {
+  font-size: 0.95em;
   background: light-dark(#ede5e2, #333);
   padding: 1em;
+  max-height: 50svh;
+  overflow-y: scroll;
+}
+
+
+
+
+@media screen and (max-width: 600px) {
+  body {
+    padding: 0;
+  }
+
+  .converter {
+    width: unset;
+  }
+
+  .instructions {
+    max-height: unset;
+    overflow-y: visible;
+  }
 }
