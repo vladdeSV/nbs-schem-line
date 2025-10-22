@@ -2,7 +2,7 @@
 
 /* reset */
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
   box-sizing: border-box;
   line-height: 1.5;
   -moz-text-size-adjust: none;
