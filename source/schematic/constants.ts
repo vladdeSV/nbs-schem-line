@@ -82,6 +82,13 @@ export const instrumentBlockIds = [
   'minecraft:emerald_block', // bit
   'minecraft:hay_block', // banjo
   'minecraft:glowstone', // pling
+
+  // mob heads
+  'minecraft:dragon_head',
+  'minecraft:creeper_head',
+  'minecraft:skeleton_skull',
+  'minecraft:zombie_head',
+
 ] as const
 
 export type InstrumentName = (typeof instrumentBlockIds)[number]
@@ -142,12 +149,6 @@ export const customPaletteBlockIds = {
 
   air: 120,
   noteNotUsedBlockId: 121, // note does not exist at all
-
-  // custom block heads
-  dragon: 130,
-  creeper: 131,
-  skeleton: 132,
-  zombie: 133,
 } as const
 
 export function getChestPaletteId(side: 'left' | 'right', direction: Direction): number {
