@@ -6,6 +6,7 @@ import {
   type Song,
   Song as SongClass,
 } from '@nbsjs/core'
+import { instrumentBlockIds } from './create-schem'
 
 export type { InstrumentId, Note, NoteId, Stream }
 
@@ -33,8 +34,60 @@ interface Note {
   instrument: number
 }
 
+type InstrumentBlockId = (typeof instrumentBlockIds)[number]
+type MobSound = string
+
+type MobSoundList = {
+  [headId in InstrumentBlockId]?: {
+    prefix: string
+    sounds: MobSound[]
+  }
+}
+
+interface MobInstrumentList {
+  [sound: string]: InstrumentId
+}
+
 const intrumentMinValue = 33
 const instrumentMaxValue = 57
+
+const mobSoundList: MobSoundList = {
+  'minecraft:dragon_head': {
+    prefix: 'minecraft/mob/enderdragon',
+    sounds: ['growl1', 'growl2', 'growl3', 'growl4'],
+  },
+  'minecraft:creeper_head': {
+    prefix: 'minecraft/random',
+    sounds: ['fuse'],
+  },
+  'minecraft:skeleton_skull': {
+    prefix: 'minecraft/mob/skeleton',
+    sounds: ['say1', 'say2', 'say3'],
+  },
+  'minecraft:zombie_head': {
+    prefix: 'minecraft/mob/zombie',
+    sounds: ['say1', 'say2', 'say3'],
+  },
+}
+
+/**
+ * Returns a list of supported mob sounds and their associated instrument ID
+ */
+function getMobInstruments() {
+  const ids: MobInstrumentList = {}
+
+  for (let [key, value] of Object.entries(mobSoundList)) {
+    const index = instrumentBlockIds.findIndex(element => element === key)
+
+    for (const sound of value.sounds) {
+      const formattedSound = `${value.prefix}/${sound}.ogg`
+
+      ids[formattedSound] = index
+    }
+  }
+
+  return ids
+}
 
 /*
  * Returns a list of instrument IDs that act as tempo changers (i.e. have the name "Tempo Changer").
@@ -142,7 +195,7 @@ function validateAndAdjustSong(song: Song, roundingMethod: RoundingMethod): Song
     console.warn('- notes out of range 33-57 (will be transposed to legal range)')
   }
   if (hasCustomInstruments) {
-    console.warn('- custom instruments >15 (will be removed)')
+    console.warn('- custom instruments >15 (will be removed or remapped)')
   }
   console.warn('proceeding with adjustments...')
 
@@ -203,6 +256,13 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
     maxStackedTicks = Math.ceil(maxTempo / 20)
   }
 
+  const mobInstruments = getMobInstruments()
+  console.debug('supported mob instruments:', mobInstruments)
+
+  // note: currently, these instruments are not created on the adjusted song
+  // this should be implemented since affected notes will be pointing at a null index,
+  // however this currently should not be an issue.
+
   // process each layer
   // layers are returned bottom to top, so we reverse to process top to bottom
   for (const originalLayer of originalSong.layers.all.toReversed()) {
@@ -235,9 +295,19 @@ function createAdjustedSong(originalSong: Song, roundingMethod: RoundingMethod):
         continue
       }
 
-      // skip custom instruments
+      // remap mob head instruments
       if (note.instrument > 15) {
-        continue
+        const noteInstrument = originalSong.instruments.all[note.instrument]
+        const mobInstrument = mobInstruments[noteInstrument.soundFile]
+
+        // ignore unsupported instruments
+        if (!mobInstrument) {
+          continue
+        }
+
+        console.debug(`remapping instrument ${noteInstrument.soundFile} to ${mobInstrument}`)
+
+        note.instrument = mobInstrument
       }
 
       // adjust note key to legal range
@@ -310,10 +380,7 @@ function convertNBStoStreams(song: Song): Record<InstrumentId, Record<NoteId, St
   const instruments = new Set<InstrumentId>()
   for (const layer of song.layers.all) {
     for (const note of Object.values(layer.notes.all) as NBSNote[]) {
-      if (note.instrument <= 15) {
-        // only vanilla instruments
-        instruments.add(note.instrument)
-      }
+      instruments.add(note.instrument)
     }
   }
 
@@ -331,11 +398,6 @@ function convertNBStoStreams(song: Song): Record<InstrumentId, Record<NoteId, St
   for (const layer of song.layers.all) {
     for (const [tickString, note] of Object.entries(layer.notes.all) as [string, NBSNote][]) {
       const tick = Number(tickString)
-
-      if (note.instrument > 15) {
-        console.debug(`skipping custom instrument (id: ${note.instrument})`)
-        continue
-      }
 
       const shiftedNoteValue = note.key - 33
 
