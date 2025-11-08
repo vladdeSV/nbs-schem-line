@@ -82,6 +82,13 @@ export const instrumentBlockIds = [
   'minecraft:emerald_block', // bit
   'minecraft:hay_block', // banjo
   'minecraft:glowstone', // pling
+
+  // mob heads
+  'minecraft:dragon_head',
+  'minecraft:creeper_head',
+  'minecraft:skeleton_skull',
+  'minecraft:zombie_head',
+
 ] as const
 
 export type InstrumentName = (typeof instrumentBlockIds)[number]
@@ -97,7 +104,7 @@ export const directionSectionToInstrument: Record<Direction, Record<Section, Ins
     bottom: blockNameToInstrumentId['minecraft:packed_ice'],
     'percussion-left': blockNameToInstrumentId['minecraft:stone'],
     'percussion-right': blockNameToInstrumentId['minecraft:soul_sand'],
-    'mob-head': blockNameToInstrumentId['minecraft:dragon_head'],
+    'mob-head': blockNameToInstrumentId['minecraft:creeper_head'],
   },
   south: {
     top: blockNameToInstrumentId['minecraft:clay'],
@@ -105,7 +112,7 @@ export const directionSectionToInstrument: Record<Direction, Record<Section, Ins
     bottom: blockNameToInstrumentId['minecraft:bone_block'],
     'percussion-left': blockNameToInstrumentId['minecraft:glass'],
     'percussion-right': blockNameToInstrumentId['minecraft:sand'],
-    'mob-head': blockNameToInstrumentId['minecraft:creeper_head'],
+    'mob-head': blockNameToInstrumentId['minecraft:skeleton_skull'],
   },
   east: {
     top: blockNameToInstrumentId['minecraft:emerald_block'],
@@ -113,7 +120,7 @@ export const directionSectionToInstrument: Record<Direction, Record<Section, Ins
     bottom: blockNameToInstrumentId['minecraft:hay_block'],
     'percussion-left': blockNameToInstrumentId['minecraft:soul_sand'],
     'percussion-right': blockNameToInstrumentId['minecraft:glass'],
-    'mob-head': blockNameToInstrumentId['minecraft:skeleton_skull'],
+    'mob-head': blockNameToInstrumentId['minecraft:zombie_head'],
   },
   west: {
     top: blockNameToInstrumentId['minecraft:white_wool'],
@@ -121,7 +128,7 @@ export const directionSectionToInstrument: Record<Direction, Record<Section, Ins
     bottom: blockNameToInstrumentId['minecraft:dirt'],
     'percussion-left': blockNameToInstrumentId['minecraft:sand'],
     'percussion-right': blockNameToInstrumentId['minecraft:stone'],
-    'mob-head': blockNameToInstrumentId['minecraft:zombie_head'],
+    'mob-head': blockNameToInstrumentId['minecraft:dragon_head'],
   },
 } as const
 
@@ -142,12 +149,6 @@ export const customPaletteBlockIds = {
 
   air: 120,
   noteNotUsedBlockId: 121, // note does not exist at all
-
-  // custom block heads
-  dragon: 130,
-  creeper: 131,
-  skeleton: 132,
-  zombie: 133,
 } as const
 
 export function getChestPaletteId(side: 'left' | 'right', direction: Direction): number {

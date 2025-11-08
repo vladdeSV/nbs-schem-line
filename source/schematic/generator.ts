@@ -57,10 +57,6 @@ export async function parseInstrumentStreams(
 
   palette['minecraft:air'] = new Int32(customPaletteBlockIds.air)
   palette['minecraft:composter'] = new Int32(customPaletteBlockIds.noteNotUsedBlockId)
-  palette['minecraft:dragon_head'] = new Int32(customPaletteBlockIds.dragon)
-  palette['minecraft:creeper_head'] = new Int32(customPaletteBlockIds.creeper)
-  palette['minecraft:skeleton_skull'] = new Int32(customPaletteBlockIds.skeleton)
-  palette['minecraft:zombie_head'] = new Int32(customPaletteBlockIds.zombie)
 
   const blockIds: number[] = new Array(width * height * depth).fill(customPaletteBlockIds.air)
   const blockEntities: BlockEntity[] = []

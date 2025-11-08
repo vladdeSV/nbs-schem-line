@@ -65,7 +65,7 @@ export function getLocalCoordinates(
   for (const position of positions) {
     const letter = sectionToLetter[position.section]
     const noteIndex = noteId.toString().padStart(2, '0')
-    const targetPattern = `${letter}${noteIndex}`
+    const targetPattern = letter === 'M' ? 'M' : `${letter}${noteIndex}`
 
     console.debug(`glc: searching for ${targetPattern}`)
 
