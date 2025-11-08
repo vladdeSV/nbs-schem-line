@@ -104,7 +104,7 @@ export const directionSectionToInstrument: Record<Direction, Record<Section, Ins
     bottom: blockNameToInstrumentId['minecraft:packed_ice'],
     'percussion-left': blockNameToInstrumentId['minecraft:stone'],
     'percussion-right': blockNameToInstrumentId['minecraft:soul_sand'],
-    'mob-head': blockNameToInstrumentId['minecraft:dragon_head'],
+    'mob-head': blockNameToInstrumentId['minecraft:creeper_head'],
   },
   south: {
     top: blockNameToInstrumentId['minecraft:clay'],
@@ -112,7 +112,7 @@ export const directionSectionToInstrument: Record<Direction, Record<Section, Ins
     bottom: blockNameToInstrumentId['minecraft:bone_block'],
     'percussion-left': blockNameToInstrumentId['minecraft:glass'],
     'percussion-right': blockNameToInstrumentId['minecraft:sand'],
-    'mob-head': blockNameToInstrumentId['minecraft:creeper_head'],
+    'mob-head': blockNameToInstrumentId['minecraft:skeleton_skull'],
   },
   east: {
     top: blockNameToInstrumentId['minecraft:emerald_block'],
@@ -120,7 +120,7 @@ export const directionSectionToInstrument: Record<Direction, Record<Section, Ins
     bottom: blockNameToInstrumentId['minecraft:hay_block'],
     'percussion-left': blockNameToInstrumentId['minecraft:soul_sand'],
     'percussion-right': blockNameToInstrumentId['minecraft:glass'],
-    'mob-head': blockNameToInstrumentId['minecraft:skeleton_skull'],
+    'mob-head': blockNameToInstrumentId['minecraft:zombie_head'],
   },
   west: {
     top: blockNameToInstrumentId['minecraft:white_wool'],
@@ -128,7 +128,7 @@ export const directionSectionToInstrument: Record<Direction, Record<Section, Ins
     bottom: blockNameToInstrumentId['minecraft:dirt'],
     'percussion-left': blockNameToInstrumentId['minecraft:sand'],
     'percussion-right': blockNameToInstrumentId['minecraft:stone'],
-    'mob-head': blockNameToInstrumentId['minecraft:zombie_head'],
+    'mob-head': blockNameToInstrumentId['minecraft:dragon_head'],
   },
 } as const
 
